@@ -14,12 +14,18 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
+    /* Занять всю высоту, которую даёт попап. Без этого рамка сжималась по содержимому,
+       и флаг large у попапа не давал ничего: место было, а игровое поле его не брало. */
+    height: 100%;
+    min-height: 0;
     color: var(--stdoom-fg);
     outline: none;
 }
 
 /* Рамка вокруг игрового поля: в ней живут кнопки, само поле остаётся чистым. */
 .stdoom-frame {
+    /* Рамка забирает всю высоту окна, а внутри неё остаток достаётся сцене. */
+    flex: 1 1 auto;
     /* Раньше здесь был grid с тремя строками. С появлением панели настроек (Фаза 4)
        строк стало четыре, причём одна из них скрыта чаще, чем видна, — а пустая
        grid-строка всё равно съедала бы gap. Flex-колонка ведёт себя честнее:
@@ -315,6 +321,48 @@
     color: var(--stdoom-accent);
 }
 
+/* Справка по управлению. Она в панели, а не на стартовом экране: раскладка у нас не
+   оригинальная (WASD ходит, стрелки только крутят), и возвращаются за ней именно
+   тогда, когда что-то не выходит. */
+.stdoom-panel-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    border: 1px solid var(--stdoom-border);
+    border-radius: 6px;
+}
+
+.stdoom-panel-subtitle {
+    margin: 0;
+    font-size: 0.85em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.75;
+}
+
+/* Две колонки: клавиши узкой, описание — всем остальным. Сетка, а не таблица, чтобы
+   на узком экране колонка клавиш не растягивалась под самую длинную строку. */
+.stdoom-controls-list {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 3px 12px;
+    margin: 0;
+    font-size: 0.82em;
+}
+
+.stdoom-controls-keys {
+    font-weight: 700;
+    white-space: nowrap;
+    color: var(--stdoom-accent);
+}
+
+.stdoom-controls-what {
+    margin: 0;
+    min-width: 0;
+    opacity: 0.85;
+}
+
 .stdoom-panel-note {
     margin: 0;
     font-size: 0.8em;
@@ -523,7 +571,12 @@
 .stdoom-dialog {
     display: flex;
     min-width: 0;
-    max-width: min(96vw, 1100px);
+    /* Фолбэк без попапа ST: размеры задаём сами, иначе окно съёжится по содержимому
+       ровно так же, как это делал попап без флага large. */
+    width: min(96vw, 1400px);
+    height: 92vh;
+    min-height: 0;
+    max-width: min(96vw, 1400px);
     max-height: 92vh;
     padding: 8px;
     border: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.25));

@@ -635,4 +635,51 @@ await test('§4.10: свой IWAD не просачивается в settings.js
     panel.destroy();
 });
 
+// --- Справка по управлению
+//
+// Причина, по которой она вообще есть: раскладка не оригинальная — стрелки крутят
+// камеру и НЕ ходят (§5.2), а в ванильном DOOM одна клавиша на действие, так что
+// «и WASD, и стрелки на движение» выразить нечем. Игрок, жмущий стрелки по привычке,
+// поворачивается на месте и решает, что застрял. Так и вышло на живой проверке.
+
+await test('панель показывает раскладку — иначе игрок остаётся с догадками', () => {
+    const { panel } = makePanel();
+    const box = panel.element.querySelector('.stdoom-panel-controls');
+    assert(box, 'блок справки есть');
+
+    const keys = [...box.querySelectorAll('.stdoom-controls-keys')].map((el) => el.textContent);
+    const text = box.textContent;
+
+    assert(keys.some((k) => k.includes('W')), 'движение на WASD названо');
+    assert(keys.some((k) => k.includes('←')), 'поворот стрелками назван');
+    assert(text.includes('Пробел'), 'Use назван — им открываются двери');
+    assert(/Ctrl/.test(text), 'огонь назван');
+
+    panel.destroy();
+});
+
+await test('справка прямо предупреждает, что стрелки не ходят', () => {
+    const { panel } = makePanel();
+    const rows = [...panel.element.querySelectorAll('.stdoom-controls-keys')];
+    const arrows = rows.find((el) => el.textContent.includes('←'));
+    const what = arrows.nextElementSibling.textContent;
+    // Это и есть та самая ловушка: без явной оговорки строка «поворот» читается как
+    // «стрелки — управление», и игрок не догадывается нажать W.
+    assert(/НЕ идут|не идут/.test(what), `оговорка про движение есть, а не «${what}»`);
+    panel.destroy();
+});
+
+await test('справка не мешает настройкам: поля и слоты файлов на месте', () => {
+    const { panel, field } = makePanel();
+    assert(field('stdoom-field-cycles'), 'поле циклов на месте');
+    assert(panel.element.querySelector('.stdoom-panel-controls'), 'и справка рядом');
+    // Порядок важен для чтения: справка после настроек, но до кнопок действий.
+    const children = [...panel.element.children].map((el) => el.className);
+    const help = children.findIndex((c) => c.includes('stdoom-panel-controls'));
+    const actions = children.findIndex((c) => c.includes('stdoom-panel-actions'));
+    assert(help > 0 && actions > help, `справка перед кнопками: ${children.join(' | ')}`);
+    panel.destroy();
+});
+
+
 report('settings-panel');

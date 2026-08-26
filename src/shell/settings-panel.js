@@ -207,7 +207,7 @@ export function createSettingsPanel({ onChange = null } = {}) {
         + 'при закрытии окна сохранится заново, поэтому сбрасывать лучше до старта '
         + 'или сразу закрывать окно после сброса.';
 
-    element.append(title, fields, files, actions, note);
+    element.append(title, fields, files, makeControlsHelp(), actions, note);
 
     let busy = false;
     // Слоты пользовательских файлов заняты чтением/записью по одному: файл на
@@ -627,6 +627,58 @@ function wrap(...nodes) {
     const box = document.createElement('div');
     box.className = 'stdoom-field-box';
     box.append(...nodes);
+    return box;
+}
+
+/**
+ * Справка по управлению.
+ *
+ * ЗАЧЕМ ЭТО ЕСТЬ. Раскладка у нас не оригинальная: движение на WASD, а стрелки крутят
+ * камеру и НЕ ходят (§5.2). В ванильном DOOM одна клавиша на действие, поэтому
+ * «и WASD, и стрелки на движение» выразить нечем — выбран современный вариант. Игрок,
+ * который по привычке 1993 года жмёт стрелки, поворачивается на месте и делает
+ * единственный доступный вывод: «я застрял в первой комнате». Так и случилось на живой
+ * проверке, поэтому раскладка написана прямо в окне, а не оставлена на догадки.
+ *
+ * Место выбрано здесь, а не на стартовом экране: там текст читают один раз и мимо, а
+ * за справкой возвращаются ровно тогда, когда что-то не выходит.
+ */
+function makeControlsHelp() {
+    const box = document.createElement('div');
+    box.className = 'stdoom-panel-controls';
+
+    const heading = document.createElement('h4');
+    heading.className = 'stdoom-panel-subtitle';
+    heading.textContent = 'Управление';
+    box.appendChild(heading);
+
+    const list = document.createElement('dl');
+    list.className = 'stdoom-controls-list';
+
+    const ROWS = [
+        ['W A S D', 'ходить: вперёд, назад и шагом вбок'],
+        ['← →', 'поворот камеры (вперёд НЕ идут — для этого W)'],
+        ['Пробел', 'открыть дверь, нажать переключатель'],
+        ['Ctrl', 'огонь'],
+        ['Shift', 'бег'],
+        ['1…7', 'выбор оружия'],
+        ['Мышь', 'поворот; ЛКМ — огонь, ПКМ — шагом вбок, средняя — вперёд'],
+        ['Esc', 'меню DOOM — окно таверны этим не закрывается'],
+        ['Tab', 'карта уровня'],
+        ['F2 / F3', 'сохранить и загрузить игру'],
+    ];
+
+    for (const [keys, what] of ROWS) {
+        const term = document.createElement('dt');
+        term.className = 'stdoom-controls-keys';
+        term.textContent = keys;
+        const desc = document.createElement('dd');
+        desc.className = 'stdoom-controls-what';
+        desc.textContent = what;
+        list.append(term, desc);
+    }
+
+    box.appendChild(list);
     return box;
 }
 
