@@ -64,7 +64,7 @@ function linkExtension(dataRoot) {
 // Каталог public/scripts/extensions/third-party грузится таверной независимо от
 // data-root, поэтому лежащая там копия STDoom перебивает junction, который прогон
 // делает во временный data-root, — и тесты молча проверяют вчерашний код (грабли,
-// стоившие в STGames целого дня проверок). Падаем внятно.
+// стоившие целого дня проверок впустую). Падаем внятно.
 function assertNoRivalCopies(stDir) {
     const dir = join(stDir, 'public', 'scripts', 'extensions', 'third-party');
     if (!existsSync(dir)) return;

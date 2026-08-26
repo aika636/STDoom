@@ -7,7 +7,7 @@
 //     даёт байт-в-байт тот же файл, и его хеш можно держать в документации.
 //
 // Что НЕ кладём в архив: `dosbox.conf`. Он передаётся отдельной строкой
-// (см. plan.md §5.1) — файл `.jsdos/dosbox.conf` внутри zip перезаписал бы её.
+// при запуске — файл `.jsdos/dosbox.conf` внутри zip перезаписал бы её.
 //
 // Запуск: node tools/build-bundle.mjs
 import { createHash } from 'node:crypto';
@@ -20,7 +20,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DOOM_DIR = join(ROOT, 'assets', 'doom');
 const OUT = join(DOOM_DIR, 'doom.zip');
 
-/** Исходники бандла. MD5/размер — из plan.md §1.2; расхождение = чужой файл. */
+/** Исходники бандла. MD5/размер зафиксированы в assets/README.md; расхождение = чужой файл. */
 export const SOURCES = [
     {
         name: 'DOOM.EXE',
@@ -38,7 +38,7 @@ export const SOURCES = [
         name: 'DEFAULT.CFG',
         size: null, // наш файл, содержимое может меняться — хеш не фиксируем
         md5: null,
-        note: 'наш стартовый конфиг, plan.md §5.2',
+        note: 'наш стартовый конфиг, генератор в src/dos/config.js',
     },
 ];
 
@@ -184,7 +184,7 @@ function main() {
     for (const e of entries) {
         console.log(`  ${e.name.padEnd(12)} ${String(e.data.length).padStart(8)} B  md5 ${md5(e.data)}`);
     }
-    console.log('[build-bundle] dosbox.conf в архив НЕ кладётся (plan.md §5.1)');
+    console.log('[build-bundle] dosbox.conf в архив НЕ кладётся, он передаётся строкой');
     console.log(`[build-bundle] записан ${OUT}`);
     console.log(`  размер  ${statSync(OUT).size} B`);
     console.log(`  md5     ${md5(zip)}`);

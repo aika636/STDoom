@@ -94,7 +94,7 @@ export default async function suite(env) {
         // dosboxWorker(), — поэтому размер из строки «DOOM запущен» не проверяем,
         // а спрашиваем сам канвас.
         // Кадр приходит НЕ 320x200: DOSBox отдаёт удвоенный по строкам VGA-режим,
-        // то есть 640x400 (см. development.md, п. 17). Проверяем именно его — если
+        // то есть 640x400 (масштабирование делает CSS). Проверяем именно его — если
         // однажды станет 320x200, это смена поведения эмулятора, а не мелочь.
         const size = await page.evaluate(() => {
             const canvas = document.querySelector('.stdoom-canvas');

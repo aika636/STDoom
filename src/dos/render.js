@@ -321,7 +321,7 @@ export function createRenderer(canvas, opts = {}) {
         }
         if (rafId) return;
         // rAF планируется ВНЕ try/catch вокруг draw(): исключение внутри отрисовки
-        // не должно молча убивать цикл (урок STGames).
+        // не должно молча убивать цикл.
         rafId = requestAnimationFrame(() => {
             try {
                 // Сбрасываем ТОЛЬКО по нарисованному кадру. Холостой выход из draw()
