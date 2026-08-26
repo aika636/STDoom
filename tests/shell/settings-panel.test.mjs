@@ -635,6 +635,58 @@ await test('§4.10: свой IWAD не просачивается в settings.js
     panel.destroy();
 });
 
+// --- Громкость
+
+await test('ползунок громкости правит настройку и сохраняется', () => {
+    const { panel, settings, changes, field } = makePanel();
+    const slider = field('stdoom-field-volume');
+    assert(slider, 'ползунок есть');
+    assertEqual(slider.type, 'range', 'именно ползунок');
+    assertEqual(slider.min, '0', 'от нуля');
+    assertEqual(slider.max, '100', 'до сотни процентов');
+
+    slider.value = '40';
+    fire(slider, 'input');
+
+    assertEqual(settings.volume, 40, 'настройка изменилась');
+    assertEqual(JSON.stringify(changes.at(-1)), JSON.stringify(['volume', 40]), 'изменение ушло наружу');
+    assertEqual(field('stdoom-volume-value').textContent, '40%', 'подпись');
+    panel.destroy();
+});
+
+await test('громкость подтягивается из настроек при открытии панели', () => {
+    const { panel, field } = makePanel({ volume: 15 });
+    panel.open();
+    // То же место, где живёт чувствительность мыши: extensionSettings, а значит
+    // значение переживает перезагрузку страницы.
+    assertEqual(field('stdoom-field-volume').value, '15', 'значение восстановлено');
+    assertEqual(field('stdoom-volume-value').textContent, '15%', 'подпись тоже');
+    panel.destroy();
+});
+
+await test('битая громкость из правленого руками settings.json не даёт тишины', () => {
+    const { panel, field } = makePanel({ volume: 'погромче' });
+    panel.open();
+    // Мусор → полная громкость: молча оставить игрока без звука хуже, чем
+    // проигнорировать неверное значение.
+    assertEqual(field('stdoom-field-volume').value, '100', 'откат на 100%');
+    panel.destroy();
+});
+
+await test('громкость зажимается границами 0…100', () => {
+    const { panel, settings, field } = makePanel();
+    const slider = field('stdoom-field-volume');
+
+    slider.value = '999';
+    fire(slider, 'input');
+    assertEqual(settings.volume, 100, 'выше сотни не пускаем');
+
+    slider.value = '-40';
+    fire(slider, 'input');
+    assertEqual(settings.volume, 0, 'ниже нуля тоже');
+    panel.destroy();
+});
+
 // --- Справка по управлению
 //
 // Причина, по которой она вообще есть: раскладка не оригинальная — стрелки крутят

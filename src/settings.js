@@ -13,7 +13,9 @@ export const SETTINGS_VERSION = 1;
 
 // version      — номер схемы (задел под будущие миграции);
 // cycles       — циклы DOSBox, старт 20000 (§4.9 плана);
-// sound        — звук включён (управление только mute/unmute, §4.5);
+// sound        — звук включён (mute/unmute, §4.5);
+// volume       — громкость 0…100 %. Регулятора у эмулятора нет вовсе, это наш
+//                собственный GainNode в графе js-dos (см. `dos/audio.js`);
 // mouseSensitivity — наш собственный множитель дельт мыши; крутим только его,
 //                множители в DEFAULT.CFG и dosbox.conf держим нейтральными (§4.8);
 // touchControls — тач-контролы: 'auto' (по наличию сенсора), 'on', 'off' (§6);
@@ -23,6 +25,7 @@ export const DEFAULTS = Object.freeze({
     version: SETTINGS_VERSION,
     cycles: 20000,
     sound: true,
+    volume: 100,
     mouseSensitivity: 1,
     touchControls: 'auto',
     touchLayout: {},

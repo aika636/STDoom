@@ -45,6 +45,7 @@ globalThis.indexedDB = undefined;   // сейвов нет — storage.js ухо
 
 const { createDoomSession } = await import('../../src/dos/session.js');
 const { QUIET_MS } = await import('../../src/dos/autosave.js');
+const { getMasterVolume } = await import('../../src/dos/audio.js');
 
 console.log('dos session');
 
@@ -962,5 +963,29 @@ await test('§4.10: F2 доводит прогресс до хранилища, 
 
     refs.cleanup();
 });
+
+await test('громкость применяется к живой сессии и не требует перезапуска', async () => {
+    const refs = makeRefs();
+    setupScenario();
+    const session = createDoomSession();
+    const teardown = session.init(refs);
+    session.onStart(refs);
+    await settle();
+
+    // Регулятора громкости у эмулятора нет — это наш GainNode, и настройка обязана
+    // доезжать до него на лету, как чувствительность мыши, а не при следующем запуске.
+    context.extensionSettings.STDoom.volume = 30;
+    refs.emitSettingsChange('volume', 30);
+    assertEqual(getMasterVolume(), 0.3, 'проценты переведены в долю и применены');
+
+    context.extensionSettings.STDoom.volume = 0;
+    refs.emitSettingsChange('volume', 0);
+    assertEqual(getMasterVolume(), 0, 'тишина — тоже допустимое значение');
+
+    teardown();
+    await settle();
+    refs.cleanup();
+});
+
 
 report('dos session');

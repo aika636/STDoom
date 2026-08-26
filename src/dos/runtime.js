@@ -9,7 +9,7 @@ import { logInfo, logWarn, logError } from '../log.js';
 import { loadEmulators } from './loader.js';
 import { buildDosboxConf, clampCycles } from './config.js';
 import { createRenderer } from './render.js';
-import { createAudioControl, probeSampleRate } from './audio.js';
+import { createAudioControl, installGainHook, probeSampleRate } from './audio.js';
 import { loadChanges, loadUserFile, saveChanges } from './storage.js';
 import { makeStoreZip } from './zip.js';
 import { DOS_NAMES } from './iwad.js';
@@ -119,6 +119,10 @@ export async function startDoom({
     if (changes) init.push(changes);
     init.push(dosboxConf);
 
+    // Регулятор громкости встраивается в аудиограф js-dos на его `connect()`, а тот
+    // случается во время загрузки — значит хук обязан стоять ДО неё (`dos/audio.js`).
+    installGainHook();
+
     report('booting');
     const ci = await emulators.dosboxWorker(init, {
         audioWorklet: true,
@@ -137,7 +141,7 @@ export async function startDoom({
     let audio;
     try {
         renderer = createRenderer(canvas, { box, onFailure: onRenderFailure });
-        audio = createAudioControl(ci, Boolean(settings.muted));
+        audio = createAudioControl(ci, Boolean(settings.muted), volumeFraction(settings.volume));
     } catch (err) {
         try { await ci.exit(); } catch (exitErr) { logWarn('ci.exit() после сбоя рендера', exitErr); }
         throw err;
@@ -293,3 +297,14 @@ export async function startDoom({
 // Реэкспорт для тех, кто уже импортирует его отсюда: сама функция переехала в
 // config.js, к границам, которые она и стережёт.
 export { clampCycles };
+
+/**
+ * Проценты из настроек → доля 0…1 для GainNode. Мусор из правленого руками
+ * settings.json превращается в полную громкость, а не в тишину: молча оставить
+ * игрока без звука хуже, чем проигнорировать битое значение.
+ */
+export function volumeFraction(percent) {
+    const number = Number(percent);
+    if (!Number.isFinite(number)) return 1;
+    return Math.max(0, Math.min(100, number)) / 100;
+}

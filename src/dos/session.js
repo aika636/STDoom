@@ -7,7 +7,7 @@
 import { logError, logInfo, logWarn } from '../log.js';
 import { toast } from '../ctx.js';
 import { getSettings, normalizeTouchMode } from '../settings.js';
-import { startDoom } from './runtime.js';
+import { startDoom, volumeFraction } from './runtime.js';
 import { createAutosave } from './autosave.js';
 import { createKeyBus } from '../input/key-bus.js';
 import { createKeyboard } from '../input/keyboard.js';
@@ -134,7 +134,11 @@ export function createDoomSession() {
         startDoom({
             canvas,
             box: refs.screen,
-            settings: { cycles: settings.cycles, muted: settings.sound === false },
+            settings: {
+                cycles: settings.cycles,
+                muted: settings.sound === false,
+                volume: settings.volume,
+            },
             onProgress: (stage, detail) => {
                 if (closed) return;
                 const text = STAGE_TEXT[stage] ?? stage;
@@ -169,6 +173,7 @@ export function createDoomSession() {
             try {
                 attachInput(refs);
                 applySound();
+                applyVolume();
                 applyDebugOverlay();
             } catch (err) {
                 doom = null;
@@ -369,6 +374,9 @@ export function createDoomSession() {
             case 'sound':
                 applySound();
                 break;
+            case 'volume':
+                applyVolume();
+                break;
             case 'debugOverlay':
                 applyDebugOverlay();
                 break;
@@ -390,6 +398,16 @@ export function createDoomSession() {
         // Без запущенного эмулятора показывать нечего — цифры берутся из него.
         if (on && doom) overlay.start();
         else overlay.stop();
+    }
+
+    /**
+     * Громкость (0…100 в настройках, 0…1 в графе). Отдельно от applySound: звук —
+     * это mute/unmute у эмулятора, а громкость — наш GainNode, и один другого не
+     * заменяет (`dos/audio.js`).
+     */
+    function applyVolume() {
+        if (!doom) return;
+        doom.audio.setVolume(volumeFraction(readSettings().volume));
     }
 
     function applySound() {

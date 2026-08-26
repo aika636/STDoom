@@ -5,7 +5,8 @@
 // Запуск: node tests/dos/audio.test.mjs
 
 import {
-    EXPECTED_SAMPLE_RATE, createAudioControl, probeSampleRate,
+    EXPECTED_SAMPLE_RATE, createAudioControl, getMasterVolume, hasGainNode,
+    installGainHook, probeSampleRate, resetGainHookForTests, setMasterVolume,
 } from '../../src/dos/audio.js';
 import { assert, assertEqual, report, test } from '../_harness.mjs';
 
@@ -161,6 +162,134 @@ test('probeSampleRate: конструктор бросил — возвраща�
     assertEqual(result, 0, 'ноль');
     assertEqual(warnings.length, 1, 'предупредили');
     delete globalThis.AudioContext;
+});
+
+
+// --- Регулятор громкости (GainNode в графе js-dos)
+//
+// У эмулятора регулятора нет вовсе: весь его словарь — wc-mute и wc-unmute. Свой узел
+// приходится вставлять в чужой граф, а зацепка там ровно одна — имя процессора
+// `jsdos-audio`. Отсюда и подмена глобального AudioWorkletNode; тесты ниже стерегут
+// главное: свой узел найден, чужие не тронуты.
+
+/** Минимальный поддельный Web Audio: столько, сколько трогает хук. */
+function fakeWebAudio() {
+    const log = [];
+    class FakeGain {
+        constructor() { this.gain = { value: 1 }; }
+        connect(target) { log.push(['gain->', target.tag]); return target; }
+    }
+    const destination = { tag: 'destination' };
+    const context = {
+        destination,
+        createGain() { const g = new FakeGain(); log.push(['createGain']); return g; },
+    };
+    class FakeWorkletNode {
+        constructor(ctx, name) { this.context = ctx; this.name = name; }
+        connect(target) { log.push(['node->', target.tag ?? 'gain']); return target; }
+    }
+    return { log, context, destination, FakeWorkletNode };
+}
+
+function withFakeAudio(fn) {
+    const saved = globalThis.AudioWorkletNode;
+    const env = fakeWebAudio();
+    globalThis.AudioWorkletNode = env.FakeWorkletNode;
+    resetGainHookForTests();
+    try {
+        return fn(env);
+    } finally {
+        globalThis.AudioWorkletNode = saved;
+        resetGainHookForTests();
+    }
+}
+
+test('хук вставляет GainNode между узлом js-dos и выходом', () => {
+    withFakeAudio(({ log, context, destination }) => {
+        assertEqual(installGainHook(), true, 'хук встал');
+        const node = new globalThis.AudioWorkletNode(context, 'jsdos-audio');
+        node.connect(destination);
+
+        assertEqual(JSON.stringify(log), JSON.stringify([
+            ['createGain'], ['node->', 'gain'], ['gain->', 'destination'],
+        ]), 'узел идёт в gain, gain — на выход');
+        assertEqual(hasGainNode(), true, 'регулятор запомнен');
+    });
+});
+
+test('чужие узлы хук не трогает — у таверны может быть свой звук', () => {
+    withFakeAudio(({ log, context, destination }) => {
+        installGainHook();
+        const foreign = new globalThis.AudioWorkletNode(context, 'tts-player');
+        foreign.connect(destination);
+
+        assertEqual(JSON.stringify(log), JSON.stringify([['node->', 'destination']]),
+            'чужой узел соединился напрямую, без gain');
+        assertEqual(hasGainNode(), false, 'регулятор не подменён чужим узлом');
+    });
+});
+
+test('соединение НЕ на выход остаётся как было', () => {
+    withFakeAudio(({ log, context }) => {
+        installGainHook();
+        const node = new globalThis.AudioWorkletNode(context, 'jsdos-audio');
+        const analyser = { tag: 'analyser' };
+        node.connect(analyser);
+        assertEqual(JSON.stringify(log), JSON.stringify([['node->', 'analyser']]),
+            'вмешиваемся только в connect на destination');
+    });
+});
+
+test('громкость, заданная ДО появления узла, применяется к нему', () => {
+    withFakeAudio(({ context, destination }) => {
+        installGainHook();
+        // Граф js-dos собирается асинхронно, и настройка почти всегда приходит раньше.
+        setMasterVolume(0.25);
+        const node = new globalThis.AudioWorkletNode(context, 'jsdos-audio');
+        const gain = node.connect(destination) && null;
+        void gain;
+        assertEqual(getMasterVolume(), 0.25, 'значение запомнено');
+    });
+});
+
+test('громкость применяется к живому узлу и зажимается в 0…1', () => {
+    withFakeAudio(({ context, destination }) => {
+        installGainHook();
+        const node = new globalThis.AudioWorkletNode(context, 'jsdos-audio');
+        node.connect(destination);
+
+        setMasterVolume(0.5);
+        assertEqual(getMasterVolume(), 0.5, 'половина');
+        assertEqual(setMasterVolume(5), 1, 'выше единицы не пускаем');
+        assertEqual(setMasterVolume(-3), 0, 'ниже нуля тоже');
+        assertEqual(setMasterVolume('чепуха'), 1, 'мусор → полная громкость, а не тишина');
+    });
+});
+
+test('повторная установка хука безвредна', () => {
+    withFakeAudio(({ context, destination, log }) => {
+        installGainHook();
+        installGainHook();
+        installGainHook();
+        const node = new globalThis.AudioWorkletNode(context, 'jsdos-audio');
+        node.connect(destination);
+        const gains = log.filter(([what]) => what === 'createGain').length;
+        assertEqual(gains, 1, 'ровно один регулятор, а не по одному на вызов');
+    });
+});
+
+test('без AudioWorkletNode хук честно отвечает «не встал»', () => {
+    const saved = globalThis.AudioWorkletNode;
+    globalThis.AudioWorkletNode = undefined;
+    resetGainHookForTests();
+    try {
+        const { result, warnings } = captureWarnings(() => installGainHook());
+        assertEqual(result, false, 'не встал');
+        assert(warnings.some((w) => /громкост/i.test(w)), 'и сказал об этом');
+    } finally {
+        globalThis.AudioWorkletNode = saved;
+        resetGainHookForTests();
+    }
 });
 
 report('dos audio');

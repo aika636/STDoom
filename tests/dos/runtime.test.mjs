@@ -20,7 +20,7 @@ globalThis.requestAnimationFrame = () => 1;
 globalThis.cancelAnimationFrame = () => {};
 
 const { CYCLES_MAX, CYCLES_MIN } = await import('../../src/dos/config.js');
-const { clampCycles, startDoom } = await import('../../src/dos/runtime.js');
+const { clampCycles, startDoom, volumeFraction } = await import('../../src/dos/runtime.js');
 
 console.log('dos runtime');
 
@@ -667,6 +667,19 @@ await test('§4.10: два persist() подряд не идут в базу од
     // означало бы повесить тест.
     ci.persist = async () => new Uint8Array([1]);
     await session.stop();
+});
+
+
+test('volumeFraction: проценты в долю, мусор — в полную громкость', () => {
+    assertEqual(volumeFraction(100), 1, 'сотня процентов');
+    assertEqual(volumeFraction(0), 0, 'ноль — тишина');
+    assertEqual(volumeFraction(50), 0.5, 'половина');
+    assertEqual(volumeFraction(250), 1, 'выше сотни зажато');
+    assertEqual(volumeFraction(-10), 0, 'ниже нуля зажато');
+    // Молча оставить игрока без звука хуже, чем проигнорировать битое значение
+    // из правленого руками settings.json.
+    assertEqual(volumeFraction('громко'), 1, 'мусор → 1, а не 0');
+    assertEqual(volumeFraction(undefined), 1, 'отсутствие настройки → 1');
 });
 
 report('dos runtime');

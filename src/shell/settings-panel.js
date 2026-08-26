@@ -34,6 +34,18 @@ export const CYCLES_STEP = 1000;
 // Границы нашего собственного множителя дельт мыши. Множители в DEFAULT.CFG и
 // dosbox.conf при этом остаются нейтральными и не трогаются (§4.8); в частности,
 // mouse_sensitivity ≥ 31 роняет DOOM при заходе в Options.
+// Громкость в процентах: 0 — тишина, 100 — как отдаёт игра. Шаг 5 — чтобы ползунок
+// брался пальцем и не требовал снайперской точности.
+export const VOLUME_MIN = 0;
+export const VOLUME_MAX = 100;
+export const VOLUME_STEP = 5;
+
+export function clampVolume(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return DEFAULTS.volume;
+    return Math.round(Math.max(VOLUME_MIN, Math.min(VOLUME_MAX, number)));
+}
+
 export const SENSITIVITY_MIN = 0.2;
 export const SENSITIVITY_MAX = 3;
 export const SENSITIVITY_STEP = 0.1;
@@ -91,6 +103,23 @@ export function createSettingsPanel({ onChange = null } = {}) {
     sound.className = 'stdoom-field stdoom-field-sound';
     const soundRow = makeCheckRow('Звук', sound, 'То же, что кнопка «Звук» в рамке окна.');
 
+    // --- Громкость
+    const volume = document.createElement('input');
+    volume.type = 'range';
+    volume.className = 'stdoom-field stdoom-field-volume';
+    volume.min = String(VOLUME_MIN);
+    volume.max = String(VOLUME_MAX);
+    volume.step = String(VOLUME_STEP);
+    const volumeValue = document.createElement('output');
+    volumeValue.className = 'stdoom-field-value stdoom-volume-value';
+    const volumeRow = makeRow(
+        'Громкость',
+        wrap(volume, volumeValue),
+        'Меняется на лету и сохраняется. Регулятора громкости у DOSBox нет — это '
+        + 'наш собственный, поверх звука игры; её внутренние ползунки в Options '
+        + 'работают независимо.',
+    );
+
     // --- Чувствительность мыши
     const sensitivity = document.createElement('input');
     sensitivity.type = 'range';
@@ -140,7 +169,7 @@ export function createSettingsPanel({ onChange = null } = {}) {
         'Показывает cpuMetrics эмулятора поверх картинки.',
     );
 
-    fields.append(cyclesRow, soundRow, sensitivityRow, touchRow, debugRow);
+    fields.append(cyclesRow, soundRow, volumeRow, sensitivityRow, touchRow, debugRow);
 
     // --- Свой IWAD (Фаза 6)
     //
@@ -262,6 +291,9 @@ export function createSettingsPanel({ onChange = null } = {}) {
         const settings = read() ?? DEFAULTS;
         cycles.value = String(clampCycles(settings.cycles));
         sound.checked = settings.sound !== false;
+        const vol = clampVolume(settings.volume);
+        volume.value = String(vol);
+        volumeValue.textContent = `${vol}%`;
         const sens = clampSensitivity(settings.mouseSensitivity);
         sensitivity.value = String(sens);
         sensitivityValue.textContent = formatSensitivity(sens);
@@ -303,6 +335,14 @@ export function createSettingsPanel({ onChange = null } = {}) {
     });
 
     sound.addEventListener('change', () => commit('sound', sound.checked));
+
+    // По 'input', как у чувствительности: громкость крутят на слух и оценивают сразу,
+    // а не после отпускания ползунка.
+    volume.addEventListener('input', () => {
+        const value = clampVolume(volume.value);
+        volumeValue.textContent = `${value}%`;
+        commit('volume', value);
+    });
 
     sensitivity.addEventListener('input', () => {
         const value = clampSensitivity(sensitivity.value);
