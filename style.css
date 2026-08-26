@@ -1,0 +1,537 @@
+/* STDoom — стили окна. Все классы с префиксом .stdoom-, чтобы ничего не пересеклось
+   с самой таверной и другими расширениями.
+
+   Цвета берутся через свой слой --stdoom-*: напрямую к --SmartTheme* не обращаемся,
+   у ST есть светлые темы, на которых прямые обращения дают невидимые элементы. */
+
+.stdoom-root {
+    --stdoom-bg: var(--SmartThemeBlurTintColor, #1a1a1a);
+    --stdoom-fg: var(--SmartThemeBodyColor, #e8e8e8);
+    --stdoom-border: var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.25));
+    --stdoom-accent: var(--SmartThemeQuoteColor, #b03a2e);
+    --stdoom-field: #000;
+
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    color: var(--stdoom-fg);
+    outline: none;
+}
+
+/* Рамка вокруг игрового поля: в ней живут кнопки, само поле остаётся чистым. */
+.stdoom-frame {
+    /* Раньше здесь был grid с тремя строками. С появлением панели настроек (Фаза 4)
+       строк стало четыре, причём одна из них скрыта чаще, чем видна, — а пустая
+       grid-строка всё равно съедала бы gap. Flex-колонка ведёт себя честнее:
+       скрытый элемент не занимает ничего, поле забирает остаток. */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    min-height: 0;
+    padding: 8px;
+    border: 1px solid var(--stdoom-border);
+    border-radius: 8px;
+    background: var(--stdoom-bg);
+}
+
+.stdoom-toolbar {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.stdoom-brand {
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--stdoom-accent);
+}
+
+.stdoom-spacer {
+    flex: 1 1 auto;
+}
+
+.stdoom-btn {
+    flex: 0 0 auto;
+    padding: 4px 10px;
+    border: 1px solid var(--stdoom-border);
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.stdoom-btn:hover,
+.stdoom-btn:focus-visible {
+    border-color: var(--stdoom-accent);
+}
+
+.stdoom-close {
+    color: var(--stdoom-accent);
+}
+
+/* Сцена — контейнер под канвас. Letterbox 4:3 держится на aspect-ratio, а не на vw:
+   попап ST на узком экране отдаёт содержимому заметно меньше ширины окна (§4.4 плана),
+   и любой расчёт от vw промахнулся бы. */
+.stdoom-stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    /* Игровое поле не должно скроллиться и зумиться под пальцем. Остальная таверна
+       при этом не трогается: правило висит только на нашей сцене и на тач-оверлее
+       (правило 29) — шире, и таверна перестала бы скроллиться пальцем целиком. */
+    touch-action: none;
+    /* flex: 1 — сцена забирает всю высоту, оставшуюся от рамки; min-height: 0
+       обязателен, иначе flex-элемент откажется ужиматься ниже содержимого. */
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+}
+
+.stdoom-screen {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    /* Пиксели VGA-режима 320×200 неквадратные: без коррекции картинка сплюснута. */
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--stdoom-field);
+    border: 1px solid var(--stdoom-border);
+    border-radius: 4px;
+}
+
+/* Канвас Фазы 2 встанет сюда и должен вписаться в letterbox сам. */
+.stdoom-screen canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+}
+
+/* Оверлей старта: автостарта нет намеренно (§4.5), звук требует жеста игрока. */
+.stdoom-start {
+    position: absolute;
+    inset: 0;
+    /* Выше отладочного оверлея (z-index: 2): без слоя счётчики кадров рисовались бы
+       поверх кнопки «Играть». */
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.6);
+    text-align: center;
+}
+
+.stdoom-start[hidden] {
+    display: none;
+}
+
+.stdoom-play {
+    padding: 10px 28px;
+    border: 2px solid var(--stdoom-accent);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--stdoom-fg);
+    font: inherit;
+    font-size: 1.2em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.stdoom-play:hover,
+.stdoom-play:focus-visible {
+    background: var(--stdoom-accent);
+}
+
+.stdoom-hint {
+    margin: 0;
+    max-width: 32em;
+    font-size: 0.85em;
+    opacity: 0.75;
+}
+
+/* Экран отказа (§3.3): показывается, когда отрисовка сломалась N раз подряд. Замерший
+   кадр без единого слова игрок читает как зависание. Пока скрыт — display: none, то
+   есть ни кликов, ни фокуса он не отбирает у игрового поля. */
+.stdoom-failure {
+    position: absolute;
+    inset: 0;
+    /* Выше всех оверлеев сцены. Тач-оверлей (z-index: 3) добавляется в сцену позже
+       экрана отказа, и при равном слое рисовался бы ПОВЕРХ него: кнопки «ОГОНЬ» и
+       «USE» легли бы на текст и кнопки отказа. Кликам это не мешало (у оверлея
+       pointer-events: none), но читать такое нельзя. */
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.82);
+    text-align: center;
+}
+
+.stdoom-failure[hidden] {
+    display: none;
+}
+
+.stdoom-failure-title {
+    margin: 0;
+    font-size: 1.1em;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--stdoom-accent);
+}
+
+.stdoom-failure-text {
+    margin: 0;
+    max-width: 34em;
+    font-size: 0.9em;
+    line-height: 1.4;
+    opacity: 0.85;
+}
+
+.stdoom-failure-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+
+.stdoom-failure-primary {
+    border-color: var(--stdoom-accent);
+    color: var(--stdoom-accent);
+}
+
+/* Панель настроек (Фаза 4). Живёт внутри рамки, между кнопками и полем: второй попап
+   таверны поверх нашего перехватил бы клики и сломал бы игру. */
+.stdoom-settings-panel {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    max-height: 45vh;
+    overflow-y: auto;
+    padding: 10px 12px;
+    border: 1px solid var(--stdoom-border);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.stdoom-settings-panel[hidden] {
+    display: none;
+}
+
+.stdoom-panel-title {
+    margin: 0;
+    font-size: 1em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--stdoom-accent);
+}
+
+.stdoom-panel-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+
+/* Строка настройки — это <label>, поэтому подпись кликабельна вместе с полем. */
+.stdoom-panel-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 4px 10px;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.stdoom-panel-row-check {
+    grid-template-columns: auto minmax(0, 1fr);
+}
+
+.stdoom-panel-label {
+    min-width: 0;
+}
+
+/* Подсказка занимает всю ширину строки под полем — иначе она ломала бы выравнивание. */
+.stdoom-panel-hint {
+    grid-column: 1 / -1;
+    font-size: 0.8em;
+    opacity: 0.65;
+}
+
+.stdoom-field-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stdoom-field {
+    font: inherit;
+    color: inherit;
+}
+
+.stdoom-field-cycles {
+    width: 9ch;
+    padding: 3px 6px;
+    border: 1px solid var(--stdoom-border);
+    border-radius: 4px;
+    background: transparent;
+}
+
+.stdoom-field-sensitivity {
+    width: clamp(120px, 40%, 220px);
+}
+
+.stdoom-field-value {
+    min-width: 3.5ch;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.8;
+}
+
+.stdoom-panel-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.stdoom-reset {
+    color: var(--stdoom-accent);
+}
+
+.stdoom-panel-note {
+    margin: 0;
+    font-size: 0.8em;
+    opacity: 0.6;
+}
+
+/* Свой IWAD (Фаза 6). Отделён от обычных настроек рамкой: это не тумблер, который
+   применяется на лету, а подмена файлов игры — она вступает в силу только при
+   следующем запуске DOSBox. */
+.stdoom-panel-files {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--stdoom-border);
+    border-radius: 6px;
+}
+
+.stdoom-panel-subtitle {
+    margin: 0;
+    font-size: 0.95em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.85;
+}
+
+.stdoom-file-slot {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+/* Родное поле выбора файла шире колонки, поэтому ему позволено ужиматься: иначе
+   длинное имя файла растянуло бы всю панель и вылезло за рамку окна. */
+.stdoom-field-file {
+    justify-self: start;
+    max-width: 100%;
+    min-width: 0;
+    font-size: 0.85em;
+}
+
+.stdoom-file-status {
+    margin: 0;
+    font-size: 0.8em;
+    opacity: 0.75;
+    /* MD5 — это 32 символа без пробелов, и на узком экране он обязан переноситься. */
+    overflow-wrap: anywhere;
+}
+
+.stdoom-file-status-error {
+    opacity: 1;
+    color: var(--stdoom-accent);
+}
+
+.stdoom-file-clear {
+    align-self: start;
+}
+
+/* Отладочный оверлей: поверх сцены, но кликам не мешает — иначе он отбирал бы у
+   канваса и фокус, и Pointer Lock. */
+.stdoom-debug {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    z-index: 2;
+    max-width: 60%;
+    padding: 6px 8px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.65);
+    color: #9f9;
+    font-family: ui-monospace, monospace;
+    font-size: 0.72em;
+    line-height: 1.35;
+    pointer-events: none;
+}
+
+.stdoom-debug[hidden] {
+    display: none;
+}
+
+.stdoom-debug-row {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+.stdoom-debug-value {
+    font-variant-numeric: tabular-nums;
+}
+
+/* --- Тач-контролы (Фаза 5, §6 плана) -------------------------------------------
+
+   Оверлей лежит ПОВЕРХ сцены, а не внутри игрового поля: канвас растягивается
+   леттербоксом инлайновыми размерами из renderer.layout(), и всё, что положено
+   внутрь него, поехало бы вместе с картинкой.
+
+   ⚠ pointer-events: none у оверлея — намеренно. События тача слушает сама сцена
+   (src/input/touch.js), а если бы их ловил оверлей, он отобрал бы у канваса клики
+   мыши и Pointer Lock (§4.8). Не «чинить». */
+.stdoom-touch {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    /* Скролл и зум под пальцем во время игры увели бы картинку вместо поворота. */
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.stdoom-touch[hidden] {
+    display: none;
+}
+
+/* Зонд safe-area: посчитать env() из JS нельзя, но можно спросить у браузера
+   готовые отступы через computed style реального элемента. Сам зонд невидим и
+   ничего не занимает — из него читаются только padding'и. */
+.stdoom-touch-probe {
+    position: absolute;
+    inset: 0;
+    padding:
+        env(safe-area-inset-top, 0px)
+        env(safe-area-inset-right, 0px)
+        env(safe-area-inset-bottom, 0px)
+        env(safe-area-inset-left, 0px);
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.stdoom-touch-layer {
+    position: absolute;
+    inset: 0;
+}
+
+/* Контролы позиционируются инлайновыми left/top/width/height из touch-layout.js:
+   раскладка считается в JS, потому что она резиновая и настраиваемая. */
+.stdoom-touch-btn {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.28);
+    color: rgba(255, 255, 255, 0.8);
+    font-family: inherit;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    /* Полупрозрачность — не украшение: контролы лежат поверх игрового поля, и
+       непрозрачные кнопки съели бы углы картинки, где в DOOM живёт HUD. */
+    opacity: 0.55;
+    transition: opacity 80ms linear, background-color 80ms linear;
+    pointer-events: none;
+}
+
+.stdoom-touch-round {
+    border-radius: 50%;
+}
+
+/* Обратная связь на нажатие: без неё игрок не понимает, попал он по кнопке или
+   промахнулся, — а хит-зона намеренно больше рисунка (§6.1). */
+.stdoom-touch-active {
+    opacity: 0.95;
+    background: rgba(176, 58, 46, 0.55);
+}
+
+.stdoom-touch-fire,
+.stdoom-touch-fireLeft {
+    border-color: var(--stdoom-accent, #b03a2e);
+}
+
+/* Кольцо стика: в покое стоит в «домашней» точке, при касании уезжает под палец —
+   стик плавающий (§6.2, п.5). */
+.stdoom-touch-stick {
+    border-style: dashed;
+    opacity: 0.35;
+}
+
+.stdoom-touch-weapon {
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+.stdoom-status {
+    flex: 0 0 auto;
+    min-height: 1em;
+    font-size: 0.8em;
+    opacity: 0.65;
+}
+
+/* Свой оверлей — только для инсталляций без попапа ST. Ни Esc, ни клик мимо окна его
+   не закрывают: закрытие — исключительно кнопкой в рамке (§4.7). */
+.stdoom-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: grid;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.stdoom-dialog {
+    display: flex;
+    min-width: 0;
+    max-width: min(96vw, 1100px);
+    max-height: 92vh;
+    padding: 8px;
+    border: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.25));
+    border-radius: 10px;
+    background: var(--SmartThemeBlurTintColor, #1a1a1a);
+}
+
+.stdoom-dialog > .stdoom-root {
+    flex: 1 1 auto;
+    min-width: 0;
+}

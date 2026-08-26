@@ -1,0 +1,273 @@
+<meta charset="utf-8">
+<title>STDoom — стенд Фазы 0</title>
+<style>
+    :root { color-scheme: dark; }
+    body {
+        margin: 0; padding: 12px; background: #14161a; color: #d8dbe0;
+        font: 13px/1.5 ui-monospace, Consolas, monospace;
+        display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 12px;
+        height: 100vh; box-sizing: border-box;
+    }
+    #stage {
+        display: grid; place-items: center; background: #000; border: 1px solid #333;
+        min-width: 0; min-height: 0;
+    }
+    canvas { image-rendering: pixelated; display: block; }
+    aside { overflow: auto; min-width: 0; }
+    h2 { font-size: 13px; margin: 12px 0 4px; color: #8ab4f8; }
+    .row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+    button { background: #2a2e35; color: inherit; border: 1px solid #444; padding: 4px 8px; cursor: pointer; }
+    button:hover { background: #363b44; }
+    .ok { color: #7ee787; } .bad { color: #ff7b72; } .warn { color: #e3b341; }
+    dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; }
+    dt { color: #9aa0a6; } dd { margin: 0; }
+    #log { white-space: pre-wrap; font-size: 11px; color: #9aa0a6; max-height: 30vh; overflow: auto; }
+</style>
+
+<div id="stage"><canvas id="screen" width="320" height="200"></canvas></div>
+
+<aside>
+    <h2>Проверки CSP</h2>
+    <dl id="csp"></dl>
+
+    <h2>Запуск</h2>
+    <div class="row">
+        <button id="start">Играть</button>
+        <button id="mute">Звук выкл</button>
+        <button id="stop">Стоп</button>
+    </div>
+
+    <h2>Циклы (§4.9)</h2>
+    <div class="row">
+        <button data-cycles="8000">8k</button>
+        <button data-cycles="20000">20k</button>
+        <button data-cycles="35000">35k</button>
+        <button data-cycles="60000">60k</button>
+        <button data-frameskip="0">skip 0</button>
+        <button data-frameskip="1">skip 1</button>
+    </div>
+
+    <h2>Телеметрия</h2>
+    <dl id="stats"></dl>
+
+    <h2>Лог</h2>
+    <div id="log"></div>
+</aside>
+
+<script type="module">
+// Стенд Фазы 0: голый браузер, без SillyTavern. Проверяет ровно четыре вещи из
+// плана §8 — CSP, производительность, «rgba всегда null» и смену циклов на лету.
+import { loadEmulators } from '../src/dos/loader.js';
+import { createRenderer } from '../src/dos/render.js';
+import { buildDosboxConf } from '../src/dos/config.js';
+import { createAudioControl, probeSampleRate } from '../src/dos/audio.js';
+
+const $ = (id) => document.getElementById(id);
+const logBox = $('log');
+
+function say(...args) {
+    const line = args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
+    logBox.textContent += line + '\n';
+    logBox.scrollTop = logBox.scrollHeight;
+    console.log('[стенд]', ...args);
+}
+
+function put(dl, key, value, cls = '') {
+    let dd = dl.querySelector(`dd[data-k="${key}"]`);
+    if (!dd) {
+        const dt = document.createElement('dt');
+        dt.textContent = key;
+        dd = document.createElement('dd');
+        dd.dataset.k = key;
+        dl.append(dt, dd);
+    }
+    dd.textContent = String(value);
+    dd.className = cls;
+}
+
+// --- 1. CSP: eval и Worker из blob: (потенциальный блокер проекта) ---------------
+
+function checkEval() {
+    try {
+        // Ровно то, что делает emulators.js для glue-кода wdosbox.js.
+        const result = eval.call(window, '1 + 1');
+        return result === 2 ? [true, 'разрешён'] : [false, 'вернул ' + result];
+    } catch (err) {
+        return [false, String(err.message ?? err)];
+    }
+}
+
+function checkBlobWorker() {
+    return new Promise((resolve) => {
+        let url = null;
+        try {
+            url = URL.createObjectURL(new Blob(['self.postMessage("pong")'], { type: 'text/javascript' }));
+            const worker = new Worker(url);
+            const timer = setTimeout(() => { worker.terminate(); resolve([false, 'таймаут']); }, 3000);
+            worker.onmessage = () => { clearTimeout(timer); worker.terminate(); resolve([true, 'разрешён']); };
+            worker.onerror = (e) => { clearTimeout(timer); worker.terminate(); resolve([false, e.message || 'ошибка']); };
+        } catch (err) {
+            resolve([false, String(err.message ?? err)]);
+        } finally {
+            if (url) setTimeout(() => URL.revokeObjectURL(url), 5000);
+        }
+    });
+}
+
+async function runCspChecks() {
+    const dl = $('csp');
+    const [evalOk, evalNote] = checkEval();
+    put(dl, 'eval', evalNote, evalOk ? 'ok' : 'bad');
+    const [workerOk, workerNote] = await checkBlobWorker();
+    put(dl, 'blob-worker', workerNote, workerOk ? 'ok' : 'bad');
+    put(dl, 'WebAssembly', typeof WebAssembly === 'object' ? 'есть' : 'нет',
+        typeof WebAssembly === 'object' ? 'ok' : 'bad');
+    put(dl, 'sampleRate', probeSampleRate() || '?',
+        probeSampleRate() === 44100 ? 'ok' : 'warn');
+    if (!evalOk || !workerOk) say('ВНИМАНИЕ: базовая проверка не прошла — это блокер, см. план §10');
+}
+
+// --- 2. Запуск эмулятора ---------------------------------------------------------
+
+const canvas = $('screen');
+const stage = $('stage');
+let session = null;
+
+async function start() {
+    if (session) return;
+    $('start').disabled = true;
+
+    const emulators = await loadEmulators();
+    say('версия emulators:', emulators.version);
+
+    const zip = await fetch(new URL('../assets/doom/doom.zip', import.meta.url))
+        .then((r) => {
+            if (!r.ok) throw new Error('doom.zip не найден — соберите его: node tools/build-bundle.mjs');
+            return r.arrayBuffer();
+        })
+        .then((b) => new Uint8Array(b));
+    say('бандл загружен:', zip.length, 'байт');
+
+    const t0 = performance.now();
+    const ci = await emulators.dosboxWorker([zip, buildDosboxConf({ cycles: 20000 })], {
+        audioWorklet: true,
+    });
+    say('старт занял', Math.round(performance.now() - t0), 'мс');
+
+    const renderer = createRenderer(canvas, { box: stage });
+    const audio = createAudioControl(ci);
+
+    // Счётчики для фактов, которые план помечает как неподтверждённые.
+    let frames = 0;
+    let rgbaFrames = 0;
+    let lastTick = performance.now();
+    let fps = 0;
+
+    const events = ci.events();
+    events.onFrameSize((w, h) => { renderer.resize(w, h); say('видеорежим', w + 'x' + h); });
+    events.onFrame((rgb, rgba) => {
+        frames++;
+        if (rgba) rgbaFrames++;
+        if (rgb) renderer.pushFrame(rgb);
+    });
+    events.onStdout((m) => say('dosbox:', m.trimEnd()));
+    events.onExit(() => say('эмулятор завершился'));
+    renderer.resize(ci.width(), ci.height());
+
+    session = { ci, renderer, audio };
+
+    setInterval(async () => {
+        const now = performance.now();
+        fps = Math.round((frames * 1000) / (now - lastTick));
+        frames = 0;
+        lastTick = now;
+        const dl = $('stats');
+        put(dl, 'кадров/с (эмулятор)', fps);
+        put(dl, 'отрисовано', renderer.framesDrawn);
+        put(dl, 'кадров с rgba', rgbaFrames, rgbaFrames === 0 ? 'ok' : 'bad');
+        put(dl, 'ошибок подряд', renderer.errorsInRow, renderer.errorsInRow ? 'bad' : 'ok');
+        try {
+            const s = await ci.asyncifyStats();
+            for (const [k, v] of Object.entries(s.cpuMetrics ?? s)) {
+                if (typeof v === 'number') put(dl, k, Math.round(v * 100) / 100);
+            }
+        } catch { /* статистика необязательна */ }
+    }, 1000);
+
+    // Минимальная клавиатура: полноценный маппинг живёт в src/input (Фаза 3).
+    const GLFW = {
+        ArrowUp: 265, ArrowDown: 264, ArrowLeft: 263, ArrowRight: 262,
+        Space: 32, Enter: 257, Escape: 256, Tab: 258,
+        ControlLeft: 341, AltLeft: 342, ShiftLeft: 340, Comma: 44, Period: 46,
+        KeyW: 87, KeyA: 65, KeyS: 83, KeyD: 68, KeyY: 89, KeyN: 78,
+    };
+    for (let i = 1; i <= 9; i++) GLFW['Digit' + i] = 48 + i;
+    for (let i = 1; i <= 12; i++) GLFW['F' + i] = 289 + i;
+
+    const pressed = new Set();
+    const onKey = (e, down) => {
+        const code = GLFW[e.code];
+        if (code === undefined) return;
+        e.preventDefault();
+        if (down) pressed.add(code); else pressed.delete(code);
+        ci.sendKeyEvent(code, down);
+    };
+    window.addEventListener('keydown', (e) => onKey(e, true));
+    window.addEventListener('keyup', (e) => onKey(e, false));
+    window.addEventListener('blur', () => {
+        for (const code of pressed) ci.sendKeyEvent(code, false);
+        pressed.clear();
+    });
+
+    // Мышь: Pointer Lock, движение только по X (в DOOM ось Y едет вперёд/назад).
+    canvas.addEventListener('click', async () => {
+        try { await canvas.requestPointerLock({ unadjustedMovement: true }); }
+        catch { try { await canvas.requestPointerLock(); } catch { /* заблокировано */ } }
+    });
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    document.addEventListener('mousemove', (e) => {
+        if (document.pointerLockElement !== canvas) return;
+        const dx = Math.max(-50, Math.min(50, e.movementX));
+        if (dx) ci.sendMouseRelativeMotion(dx, 0);
+    });
+    document.addEventListener('mousedown', (e) => {
+        if (document.pointerLockElement === canvas) ci.sendMouseButton(e.button, true);
+    });
+    document.addEventListener('mouseup', (e) => {
+        if (document.pointerLockElement === canvas) ci.sendMouseButton(e.button, false);
+    });
+
+    window.addEventListener('resize', () => renderer.layout());
+}
+
+$('start').addEventListener('click', () => start().catch((err) => {
+    say('ОШИБКА СТАРТА:', err.message ?? err);
+    console.error(err);
+    $('start').disabled = false;
+}));
+
+$('mute').addEventListener('click', () => {
+    if (!session) return;
+    const muted = session.audio.toggle();
+    $('mute').textContent = muted ? 'Звук вкл' : 'Звук выкл';
+});
+
+$('stop').addEventListener('click', async () => {
+    if (!session) return;
+    await session.ci.exit();
+    session.renderer.dispose();
+    session = null;
+    $('start').disabled = false;
+});
+
+document.querySelectorAll('[data-cycles]').forEach((b) => b.addEventListener('click', () => {
+    session?.ci.sendBackendEvent({ type: 'wc-trigger-event', event: 'cycles:' + b.dataset.cycles });
+    say('циклы →', b.dataset.cycles);
+}));
+document.querySelectorAll('[data-frameskip]').forEach((b) => b.addEventListener('click', () => {
+    session?.ci.sendBackendEvent({ type: 'wc-trigger-event', event: 'frame_skip:' + b.dataset.frameskip });
+    say('frame_skip →', b.dataset.frameskip);
+}));
+
+runCspChecks();
+</script>
