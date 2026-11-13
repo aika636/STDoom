@@ -2,7 +2,7 @@
 //
 // `assets/jsdos/emulators.js` — browserify-UMD-бандл: он рассчитан на классический
 // <script> и вешает глобальный `window.emulators`. Импортировать его как ES-модуль
-// нельзя, поэтому вставляем <script src> и ждём onload (см. план §4.2).
+// нельзя, поэтому вставляем <script src> и ждём onload.
 //
 // Отдельная грабля: внутри бандл делает `eval.call(window, ...)` для glue-кода
 // wdosbox.js и создаёт Worker из blob:-URL. Если CSP таверны это запретит — падение

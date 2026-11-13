@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>STDoom — стенд Фазы 0</title>
+<title>STDoom — стенд без таверны</title>
 <style>
     :root { color-scheme: dark; }
     body {
@@ -37,7 +37,7 @@
         <button id="stop">Стоп</button>
     </div>
 
-    <h2>Циклы (§4.9)</h2>
+    <h2>Циклы</h2>
     <div class="row">
         <button data-cycles="8000">8k</button>
         <button data-cycles="20000">20k</button>
@@ -55,8 +55,8 @@
 </aside>
 
 <script type="module">
-// Стенд Фазы 0: голый браузер, без SillyTavern. Проверяет ровно четыре вещи из
-// плана §8 — CSP, производительность, «rgba всегда null» и смену циклов на лету.
+// Стенд без таверны: голый браузер, без SillyTavern. Проверяет ровно четыре вещи из
+// проектных — CSP, производительность, «rgba всегда null» и смену циклов на лету.
 import { loadEmulators } from '../src/dos/loader.js';
 import { createRenderer } from '../src/dos/render.js';
 import { buildDosboxConf } from '../src/dos/config.js';
@@ -124,7 +124,7 @@ async function runCspChecks() {
         typeof WebAssembly === 'object' ? 'ok' : 'bad');
     put(dl, 'sampleRate', probeSampleRate() || '?',
         probeSampleRate() === 44100 ? 'ok' : 'warn');
-    if (!evalOk || !workerOk) say('ВНИМАНИЕ: базовая проверка не прошла — это блокер, см. план §10');
+    if (!evalOk || !workerOk) say('ВНИМАНИЕ: базовая проверка не прошла — это блокер, см.  ');
 }
 
 // --- 2. Запуск эмулятора ---------------------------------------------------------
@@ -194,7 +194,7 @@ async function start() {
         } catch { /* статистика необязательна */ }
     }, 1000);
 
-    // Минимальная клавиатура: полноценный маппинг живёт в src/input (Фаза 3).
+    // Минимальная клавиатура: полноценный маппинг живёт в src/input.
     const GLFW = {
         ArrowUp: 265, ArrowDown: 264, ArrowLeft: 263, ArrowRight: 262,
         Space: 32, Enter: 257, Escape: 256, Tab: 258,

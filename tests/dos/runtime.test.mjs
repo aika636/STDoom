@@ -1,4 +1,4 @@
-// Тесты жизненного цикла сессии DOSBox (§4.4, §4.9, §5.1). Настоящий wasm под jsdom
+// Тесты жизненного цикла сессии DOSBox. Настоящий wasm под jsdom
 // не запускается, поэтому `emulators` подменён через globalThis, fetch — заглушкой,
 // а WebGL — объектом-шпионом.
 //
@@ -26,7 +26,7 @@ console.log('dos runtime');
 
 // --- clampCycles --------------------------------------------------------------
 
-test('§4.9: clampCycles держит диапазон плеера 3000…1 000 000', () => {
+test('clampCycles держит диапазон плеера 3000…1 000 000', () => {
     assertEqual(CYCLES_MIN, 3000, 'нижняя граница из config.js');
     assertEqual(CYCLES_MAX, 1000000, 'верхняя граница из config.js');
     assertEqual(clampCycles(20000), 20000, 'значение внутри диапазона не трогаем');
@@ -38,7 +38,7 @@ test('§4.9: clampCycles держит диапазон плеера 3000…1 000
     assertEqual(clampCycles(Infinity), 20000, 'бесконечность считается мусором');
 });
 
-test('§4.9: мусорное значение циклов даёт дефолтные 20000', () => {
+test('мусорное значение циклов даёт дефолтные 20000', () => {
     assertEqual(clampCycles(undefined), 20000, 'undefined');
     assertEqual(clampCycles(null), 3000, 'null числится нулём и поднимается до минимума');
     assertEqual(clampCycles('привет'), 20000, 'строка-мусор');
@@ -190,7 +190,7 @@ await test('startDoom без канваса падает внятно', async ()
     assert(/канвас/.test(message), `сообщение про канвас, получено «${message}»`);
 });
 
-await test('§5.1: порядок InitFs — бандл → сейвы → строка конфига (строка последняя)', async () => {
+await test('порядок InitFs — бандл → сейвы → строка конфига (строка последняя)', async () => {
     const { seen, canvas, box } = stage({ savedChanges: new Uint8Array([9, 9]) });
     const session = await startDoom({ canvas, box, settings: { cycles: 30000 } });
 
@@ -211,7 +211,7 @@ await test('§5.1: порядок InitFs — бандл → сейвы → ст�
     box.remove();
 });
 
-await test('§5.1: без сейвов InitFs состоит из бандла и строки конфига', async () => {
+await test('без сейвов InitFs состоит из бандла и строки конфига', async () => {
     const { seen, canvas, box } = stage();
     const session = await startDoom({ canvas, box });
     assertEqual(seen.init.length, 2, 'два элемента');
@@ -221,12 +221,12 @@ await test('§5.1: без сейвов InitFs состоит из бандла �
     box.remove();
 });
 
-// --- Свой IWAD (Фаза 6) --------------------------------------------------------
+// --- Свой IWAD --------------------------------------------------------
 //
 // Проверяем ровно то, что нельзя увидеть глазами: место пользовательского архива в
 // InitFs. Раньше бандла — и штатный DOOM.EXE затрёт принесённый игроком; позже
 // сейвов — и архив с сейвами ляжет не последним; строка конфига в любом случае
-// обязана остаться в конце (§5.1).
+// обязана остаться в конце.
 
 /** Имена записей в собранном нами ZIP — читаем прямо из локальных заголовков. */
 function zipNames(bytes) {
@@ -244,7 +244,7 @@ function zipNames(bytes) {
 
 const userIwadBytes = new Uint8Array([0x49, 0x57, 0x41, 0x44, 1, 2, 3, 4]);
 
-await test('Фаза 6: свой IWAD идёт ПОСЛЕ бандла и ДО сейвов', async () => {
+await test('свой IWAD идёт ПОСЛЕ бандла и ДО сейвов', async () => {
     const { seen, canvas, box } = stage({
         savedChanges: new Uint8Array([9, 9]),
         userFiles: {
@@ -262,14 +262,14 @@ await test('Фаза 6: свой IWAD идёт ПОСЛЕ бандла и ДО �
     assertEqual(init[2][0], 9, 'третий — сейвы');
     assertEqual(typeof init[3], 'string', 'строка конфига по-прежнему последняя');
 
-    // §5.3: имя определяется содержимым WAD, а не флагом -iwad, которого в ванили нет.
+    // Имя определяется содержимым WAD, а не флагом -iwad, которого в ванили нет.
     assertEqual(zipNames(init[1]).join(','), 'DOOM2.WAD', 'WAD положен под именем для DOOM2');
 
     await session.stop();
     box.remove();
 });
 
-await test('Фаза 6: без сейвов свой IWAD встаёт сразу за бандлом', async () => {
+await test('без сейвов свой IWAD встаёт сразу за бандлом', async () => {
     const { seen, canvas, box } = stage({
         userFiles: {
             'user-iwad': userIwadBytes,
@@ -284,7 +284,7 @@ await test('Фаза 6: без сейвов свой IWAD встаёт сраз�
     box.remove();
 });
 
-await test('Фаза 6: свой DOOM.EXE едет в том же архиве и перекрывает штатный', async () => {
+await test('свой DOOM.EXE едет в том же архиве и перекрывает штатный', async () => {
     const { seen, canvas, box } = stage({
         userFiles: {
             'user-iwad': userIwadBytes,
@@ -300,7 +300,7 @@ await test('Фаза 6: свой DOOM.EXE едет в том же архиве �
     box.remove();
 });
 
-await test('Фаза 6: только свой DOOM.EXE, без своего IWAD', async () => {
+await test('только свой DOOM.EXE, без своего IWAD', async () => {
     const { seen, canvas, box } = stage({
         userFiles: { 'user-exe': new Uint8Array([0x4d, 0x5a]), 'user-exe-meta': {} },
     });
@@ -310,7 +310,7 @@ await test('Фаза 6: только свой DOOM.EXE, без своего IWAD
     box.remove();
 });
 
-await test('Фаза 6: потерянные метаданные — кладём под DOOM.WAD, а не роняем запуск', async () => {
+await test('потерянные метаданные — кладём под DOOM.WAD, а не роняем запуск', async () => {
     const { seen, canvas, box } = stage({ userFiles: { 'user-iwad': userIwadBytes } });
     const session = await startDoom({ canvas, box });
     assertEqual(zipNames(seen.init[1]).join(','), 'DOOM.WAD', 'наименее рискованное имя из трёх');
@@ -318,7 +318,7 @@ await test('Фаза 6: потерянные метаданные — кладё
     box.remove();
 });
 
-await test('Фаза 6: без своих файлов лишнего элемента в InitFs нет', async () => {
+await test('без своих файлов лишнего элемента в InitFs нет', async () => {
     const { seen, canvas, box } = stage();
     const session = await startDoom({ canvas, box });
     assertEqual(seen.init.length, 2, 'бандл и конфиг');
@@ -326,16 +326,16 @@ await test('Фаза 6: без своих файлов лишнего элеме
     box.remove();
 });
 
-await test('§4.9: эмулятор поднимается в воркере с audioWorklet', async () => {
+await test('эмулятор поднимается в воркере с audioWorklet', async () => {
     const { seen, canvas, box } = stage();
     const session = await startDoom({ canvas, box });
-    assertEqual(seen.options.audioWorklet, true, 'режим AudioWorklet включён (§4.5)');
+    assertEqual(seen.options.audioWorklet, true, 'режим AudioWorklet включён');
     assertEqual(typeof seen.options.onExtractProgress, 'function', 'прогресс распаковки');
     await session.stop();
     box.remove();
 });
 
-await test('§4.4 п.3: сразу после подписки размер подхватывается вручную', async () => {
+await test('сразу после подписки размер подхватывается вручную', async () => {
     const { log, canvas, box } = stage();
     const session = await startDoom({ canvas, box });
 
@@ -371,7 +371,7 @@ await test('стадии загрузки уходят в onProgress по пор
     box.remove();
 });
 
-await test('Фаза 6: со своим IWAD появляется стадия loading-iwad', async () => {
+await test('со своим IWAD появляется стадия loading-iwad', async () => {
     const { canvas, box } = stage({ userFiles: { 'user-iwad': userIwadBytes } });
     const stages = [];
     const session = await startDoom({
@@ -442,7 +442,7 @@ await test('onExit помечает сессию завершённой и зо�
     box.remove();
 });
 
-await test('§3.3: onRenderFailure пробрасывается в рендерер', async () => {
+await test('onRenderFailure пробрасывается в рендерер', async () => {
     const { canvas, box } = stage();
     const seen = [];
     // Кадры в этом файле не гоняются (rAF — заглушка), поэтому проверяем проводку
@@ -488,7 +488,7 @@ await test('onStdout и onMessage не роняют сессию', async () => {
 
 // --- Рычаги производительности ------------------------------------------------
 
-await test('§4.9: setCycles зажимает значение и шлёт событие бэкенду', async () => {
+await test('setCycles зажимает значение и шлёт событие бэкенду', async () => {
     const { log, canvas, box } = stage();
     const session = await startDoom({ canvas, box });
 
@@ -501,7 +501,7 @@ await test('§4.9: setCycles зажимает значение и шлёт со�
     box.remove();
 });
 
-await test('§4.9: setFrameSkip зажат диапазоном 0…10', async () => {
+await test('setFrameSkip зажат диапазоном 0…10', async () => {
     const { log, canvas, box } = stage();
     const session = await startDoom({ canvas, box });
     assertEqual(session.setFrameSkip(3), 3, 'обычное значение');
@@ -532,7 +532,7 @@ await test('pause/resume и stats переживают падение ci', async
 
 // --- Остановка ----------------------------------------------------------------
 
-await test('§4.10: stop() вызывает persist ДО ci.exit()', async () => {
+await test('stop() вызывает persist ДО ci.exit()', async () => {
     const { log, canvas, box } = stage();
     const session = await startDoom({ canvas, box });
     log.length = 0;
@@ -549,7 +549,7 @@ await test('§4.10: stop() вызывает persist ДО ci.exit()', async () =>
 
 // Регрессия: stop() поднимал флаг disposed ДО persist(), из-за чего persist()
 // видел закрытую сессию и молча возвращал false — прогресс игрока не сохранялся.
-await test('§4.10: stop() реально дописывает сейвы в хранилище', async () => {
+await test('stop() реально дописывает сейвы в хранилище', async () => {
     const { seen, canvas, box } = stage();
     const session = await startDoom({ canvas, box });
     await session.stop();
@@ -624,7 +624,7 @@ await test('сбой рендерера гасит уже поднятый эм�
 
 // --- Гонка сохранений ----------------------------------------------------------
 
-await test('§4.10: два persist() подряд не идут в базу одновременно', async () => {
+await test('два persist() подряд не идут в базу одновременно', async () => {
     // Поводов сохраниться три — закрытие окна, уход со вкладки и отказ отрисовки, —
     // и они умеют совпасть. Два ci.persist() в полёте дают две записи, и в базе
     // останется вернувшаяся последней, а вернуться последней может более ранняя.

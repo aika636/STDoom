@@ -64,8 +64,8 @@ export function createKeyboard({ surface, keys, isActive, onKey }) {
 
         // Наблюдатель нажатий: клавиатура сама ни о чём, кроме ввода, не знает, но
         // по нажатиям видно то, что больше не видно ниоткуда, — например момент
-        // сохранения внутри игры (§4.10, dos/autosave.js). Зовётся ДО маппинга: код
-        // здесь браузерный (`event.code`), а не GLFW, и клавиши без пары в §4.6
+        // сохранения внутри игры (dos/autosave.js). Зовётся ДО маппинга: код
+        // здесь браузерный (`event.code`), а не GLFW, и клавиши без пары в таблице GLFW
         // наблюдателю тоже интересны. Упасть он права не имеет — иначе унесёт с собой
         // нажатие игрока.
         if (onKey) {
@@ -112,7 +112,7 @@ export function createKeyboard({ surface, keys, isActive, onKey }) {
     function attach() {
         if (attached) return;
         attached = true;
-        // Фаза перехвата: нам нужно опередить обработчики таверны.
+        // Фаза перехвата (capture): нам нужно опередить обработчики таверны.
         window.addEventListener('keydown', onKeyDown, true);
         window.addEventListener('keyup', onKeyUp, true);
         window.addEventListener('blur', onBlur);

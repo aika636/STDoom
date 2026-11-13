@@ -1,4 +1,4 @@
-// Тесты обёртки звука (§4.5). Главный инвариант: soundFrequency() === 0 — это НОРМА
+// Тесты обёртки звука. Главный инвариант: soundFrequency() === 0 — это НОРМА
 // (режим AudioWorklet), а ненулевая частота означает тихий откат в устаревший режим.
 // DOM здесь не нужен, только подмена AudioContext.
 //
@@ -36,7 +36,7 @@ function makeCi({ frequency = 0 } = {}) {
 
 // --- Частота 0 — это норма ----------------------------------------------------
 
-test('§4.5: soundFrequency() === 0 — норма, режим AudioWorklet', () => {
+test('soundFrequency() === 0 — норма, режим AudioWorklet', () => {
     const { result: audio, warnings } = captureWarnings(
         () => createAudioControl(makeCi({ frequency: 0 })),
     );
@@ -44,7 +44,7 @@ test('§4.5: soundFrequency() === 0 — норма, режим AudioWorklet', ()
     assertEqual(warnings.length, 0, 'предупреждений нет');
 });
 
-test('§4.5: ненулевая частота — деградация с предупреждением', () => {
+test('ненулевая частота — деградация с предупреждением', () => {
     const { result: audio, warnings } = captureWarnings(
         () => createAudioControl(makeCi({ frequency: 44100 })),
     );
@@ -54,7 +54,7 @@ test('§4.5: ненулевая частота — деградация с пр�
     assert(/onSoundPush/.test(warnings[0]), 'названа причина — устаревший режим');
 });
 
-test('§4.5: недоступный soundFrequency() не роняет создание обёртки', () => {
+test('недоступный soundFrequency() не роняет создание обёртки', () => {
     const { result: audio, warnings } = captureWarnings(() => createAudioControl({
         soundFrequency: () => { throw new Error('нет такого метода'); },
         mute: () => {},

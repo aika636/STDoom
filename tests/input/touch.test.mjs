@@ -1,7 +1,7 @@
-// Тесты тач-управления (§6) под jsdom, с моком CommandInterface.
+// Тесты тач-управления под jsdom, с моком CommandInterface.
 //
 // Главный тест здесь — «стрелять во время поворота ВОЗМОЖНО». Это анти-паттерн,
-// на котором провалился официальный порт Bethesda 2019 (§6.1): там поворот и
+// на котором провалился официальный порт Bethesda 2019: там поворот и
 // стрельба висели на одной поверхности, и попытка выстрелить уводила прицел.
 // Остальные проверки стерегут те же инварианты, что и мышь с клавиатурой: второй
 // аргумент sendMouseRelativeMotion всегда 0, ничего не залипает после отмены.
@@ -102,7 +102,7 @@ await test('тап по кнопке огня жмёт и отпускает л�
     surface.remove();
 });
 
-await test('§6.1: огонь дублирован — отпускание одной кнопки не гасит очередь', () => {
+await test('огонь дублирован — отпускание одной кнопки не гасит очередь', () => {
     const { surface, ci, touch } = setup();
     down(surface, { id: 1, ...at(touch, 'fire') });
     down(surface, { id: 2, ...at(touch, 'fireLeft') });
@@ -120,7 +120,7 @@ await test('§6.1: огонь дублирован — отпускание од
 
 // --- Движение ------------------------------------------------------------------
 
-await test('§6.2: стик двигает и стрейфит, поворота не даёт', () => {
+await test('стик двигает и стрейфит, поворота не даёт', () => {
     const { surface, ci, touch } = setup();
     const start = { x: 120, y: 620 };
     assertEqual(touch.layout.controls.stick.id, 'stick', 'зона стика есть');
@@ -132,7 +132,7 @@ await test('§6.2: стик двигает и стрейфит, поворота
     move({ id: 1, x: start.x + 120, y: start.y });
     assert(ci.keys.some((k) => k.code === GLFW.D && k.down), 'вбок — стрейф KeyD');
     assert(!ci.keys.some((k) => k.code === GLFW.RIGHT || k.code === GLFW.LEFT),
-        'стрелок поворота стик не шлёт (§6.2)');
+        'стрелок поворота стик не шлёт');
     assertEqual(ci.motions.length, 0, 'и мышиных дельт тоже');
 
     up({ id: 1, x: start.x + 120, y: start.y });
@@ -143,7 +143,7 @@ await test('§6.2: стик двигает и стрейфит, поворота
 
 // --- Поворот -------------------------------------------------------------------
 
-await test('§4.8: свайп поворачивает по X, второй аргумент ВСЕГДА 0', () => {
+await test('свайп поворачивает по X, второй аргумент ВСЕГДА 0', () => {
     const { surface, ci, touch } = setup();
     const p = at(touch, 'look');
     down(surface, { id: 1, ...p });
@@ -158,7 +158,7 @@ await test('§4.8: свайп поворачивает по X, второй ар
     surface.remove();
 });
 
-await test('§4.8: чисто вертикальный свайп не даёт ничего', () => {
+await test('чисто вертикальный свайп не даёт ничего', () => {
     const { surface, ci, touch } = setup();
     const p = at(touch, 'look');
     down(surface, { id: 1, ...p });
@@ -169,9 +169,9 @@ await test('§4.8: чисто вертикальный свайп не даёт 
     surface.remove();
 });
 
-// --- Главный анти-паттерн §6.1 --------------------------------------------------
+// --- Главный анти-паттерн --------------------------------------------------
 
-await test('§6.1: стрелять во время поворота ВОЗМОЖНО — оба пальца работают сразу', () => {
+await test('стрелять во время поворота ВОЗМОЖНО — оба пальца работают сразу', () => {
     const { surface, ci, touch } = setup();
     const look = at(touch, 'look');
 
@@ -199,7 +199,7 @@ await test('§6.1: стрелять во время поворота ВОЗМО�
     surface.remove();
 });
 
-await test('§6.1: тап по огню не считается свайпом — камера стоит', () => {
+await test('тап по огню не считается свайпом — камера стоит', () => {
     const { surface, ci, touch } = setup();
     const p = at(touch, 'fire');
     // Кнопка огня физически лежит внутри правой половины: именно на этом
@@ -214,7 +214,7 @@ await test('§6.1: тап по огню не считается свайпом �
 
 // --- Use ------------------------------------------------------------------------
 
-await test('§6.3: кнопка Use шлёт Space (key_use 57 в DEFAULT.CFG)', () => {
+await test('кнопка Use шлёт Space (key_use 57 в DEFAULT.CFG)', () => {
     const { surface, ci, touch } = setup();
     const p = at(touch, 'use');
     down(surface, { id: 1, ...p });
@@ -226,7 +226,7 @@ await test('§6.3: кнопка Use шлёт Space (key_use 57 в DEFAULT.CFG)',
     surface.remove();
 });
 
-await test('§6.3: двойной тап по look-зоне = двойной клик forward = Use', async () => {
+await test('двойной тап по look-зоне = двойной клик forward = Use', async () => {
     const { surface, ci, touch } = setup();
     const p = at(touch, 'look');
 
@@ -245,7 +245,7 @@ await test('§6.3: двойной тап по look-зоне = двойной к�
     surface.remove();
 });
 
-await test('§6.3: два тапа с длинной паузой двойным не считаются', async () => {
+await test('два тапа с длинной паузой двойным не считаются', async () => {
     const { surface, ci, touch } = setup();
     const p = at(touch, 'look');
     down(surface, { id: 1, ...p });
@@ -259,7 +259,7 @@ await test('§6.3: два тапа с длинной паузой двойным
     surface.remove();
 });
 
-await test('§6.3: свайп с возвратом в ту же точку за тап не считается', async () => {
+await test('свайп с возвратом в ту же точку за тап не считается', async () => {
     const { surface, ci, touch } = setup();
     const p = at(touch, 'look');
     down(surface, { id: 1, ...p });
@@ -276,7 +276,7 @@ await test('§6.3: свайп с возвратом в ту же точку за
 
 // --- Оружие ---------------------------------------------------------------------
 
-await test('§6.2: кнопки полоски шлют Digit1…Digit7', () => {
+await test('кнопки полоски шлют Digit1…Digit7', () => {
     const { surface, ci, touch } = setup();
     const p = at(touch, 'weapon3');
     down(surface, { id: 1, ...p });
@@ -293,7 +293,7 @@ await test('§6.2: кнопки полоски шлют Digit1…Digit7', () => 
 
 // --- Сброс залипшего -------------------------------------------------------------
 
-await test('§6: pointercancel отпускает ОТМЕНЁННЫЙ палец, а не всех подряд', () => {
+await test('pointercancel отпускает ОТМЕНЁННЫЙ палец, а не всех подряд', () => {
     const { surface, ci, touch } = setup();
     down(surface, { id: 1, ...at(touch, 'fire') });
     down(surface, { id: 2, x: 120, y: 620 });
@@ -322,7 +322,7 @@ await test('§6: pointercancel отпускает ОТМЕНЁННЫЙ пале�
 
 // --- Второй палец в той же зоне (владение трекерами) ---------------------------
 
-await test('§6.2: второй палец в look-зоне не рвёт камеру владельцу', () => {
+await test('второй палец в look-зоне не рвёт камеру владельцу', () => {
     const { surface, ci, touch } = setup();
     const look = at(touch, 'look');
 
@@ -344,7 +344,7 @@ await test('§6.2: второй палец в look-зоне не рвёт кам
     surface.remove();
 });
 
-await test('§6.2: уход владельца передаёт поворот оставшемуся пальцу', () => {
+await test('уход владельца передаёт поворот оставшемуся пальцу', () => {
     const { surface, ci, touch } = setup();
     const look = at(touch, 'look');
 
@@ -366,7 +366,7 @@ await test('§6.2: уход владельца передаёт поворот �
     surface.remove();
 });
 
-await test('§6.2: второй палец в зоне стика не отбирает движение у первого', () => {
+await test('второй палец в зоне стика не отбирает движение у первого', () => {
     const { surface, ci, touch } = setup();
     const stickPoint = { x: 120, y: 620 };
 
@@ -391,7 +391,7 @@ await test('§6.2: второй палец в зоне стика не отби�
     surface.remove();
 });
 
-await test('§6.2: уход владельца стика передаёт его оставшемуся пальцу', () => {
+await test('уход владельца стика передаёт его оставшемуся пальцу', () => {
     const { surface, ci, touch } = setup();
 
     down(surface, { id: 1, x: 120, y: 620 });
@@ -409,7 +409,7 @@ await test('§6.2: уход владельца стика передаёт ег�
     surface.remove();
 });
 
-await test('§6.1: два пальца на одной кнопке Use — отпускание первого её не гасит', () => {
+await test('два пальца на одной кнопке Use — отпускание первого её не гасит', () => {
     const { surface, ci, touch } = setup();
     const use = at(touch, 'use');
 
@@ -427,7 +427,7 @@ await test('§6.1: два пальца на одной кнопке Use — от
     surface.remove();
 });
 
-await test('§6: уход со вкладки и потеря фокуса отпускают всё', () => {
+await test('уход со вкладки и потеря фокуса отпускают всё', () => {
     const { surface, ci, touch } = setup();
     down(surface, { id: 1, ...at(touch, 'fire') });
     ci.buttons.length = 0;
@@ -600,7 +600,7 @@ await test('оверлей: кольцо плавающего стика уез�
     const home = ring.style.left;
 
     down(surface, { id: 1, x: 300, y: 700 });
-    assert(ring.style.left !== home, 'кольцо переехало под палец (стик плавающий, §6.2 п.5)');
+    assert(ring.style.left !== home, 'кольцо переехало под палец (стик плавающий)');
     up({ id: 1, x: 300, y: 700 });
     assertEqual(ring.style.left, home, 'палец убрали — кольцо вернулось домой');
 

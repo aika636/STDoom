@@ -49,7 +49,7 @@ function key(type, init) {
 
 // --- Фокус на поле: глушится всё ---------------------------------------------
 
-test('§4.7: при фокусе на поле глушится ВСЁ, включая Escape и Tab', () => {
+test('при фокусе на поле глушится ВСЁ, включая Escape и Tab', () => {
     const { ci, keyboard } = setup();
     // Клавиши намеренно разные: игровая, «браузерная» Tab и Escape меню DOOM.
     const cases = ['KeyW', 'Tab', 'Escape'];
@@ -62,7 +62,7 @@ test('§4.7: при фокусе на поле глушится ВСЁ, вклю
     keyboard.detach();
 });
 
-test('§4.7: Escape доезжает до ci.sendKeyEvent кодом 256, а не закрывает окно', () => {
+test('Escape доезжает до ci.sendKeyEvent кодом 256, а не закрывает окно', () => {
     const { ci, keyboard } = setup();
     window.dispatchEvent(key('keydown', { code: 'Escape', key: 'Escape' }));
     assertEqual(ci.calls[0].code, 256, 'код GLFW Escape');
@@ -73,7 +73,7 @@ test('§4.7: Escape доезжает до ci.sendKeyEvent кодом 256, а н�
     keyboard.detach();
 });
 
-test('§4.7: клавиша без записи в таблице всё равно глушится', () => {
+test('клавиша без записи в таблице всё равно глушится', () => {
     const { ci, keyboard } = setup();
     // MediaPlayPause в CODE_TO_GLFW нет, но утечь в таверну она не должна.
     const event = key('keydown', { code: 'MediaPlayPause', key: 'MediaPlayPause' });
@@ -96,7 +96,7 @@ test('F5/F11/F12 не отбираем — браузер их всё равно
 
 // --- Фокус ушёл: перехвата нет -----------------------------------------------
 
-test('§4.7: ушёл фокус — событие не перехватывается и уходит дальше', () => {
+test('ушёл фокус — событие не перехватывается и уходит дальше', () => {
     const { ci, keyboard } = setup();
     const textarea = document.getElementById('send_textarea');
     textarea.focus();
@@ -250,9 +250,9 @@ test('sendKeyEvent, бросивший исключение, не роняет �
     surface.remove();
 });
 
-// --- Наблюдатель нажатий (§4.10) ----------------------------------------------
+// --- Наблюдатель нажатий ----------------------------------------------
 
-test('§4.10: onKey получает браузерный код каждой нажатой клавиши', () => {
+test('onKey получает браузерный код каждой нажатой клавиши', () => {
     const surface = document.createElement('canvas');
     document.body.appendChild(surface);
     const ci = { sendKeyEvent: () => {} };
@@ -267,7 +267,7 @@ test('§4.10: onKey получает браузерный код каждой н
     window.dispatchEvent(key('keyup', { code: 'KeyW', key: 'w' }));
     assertEqual(seen.join(','), 'F2,KeyW', 'коды пришли в порядке нажатий, без keyup');
 
-    // Клавиша без пары в §4.6 до эмулятора не доходит, а наблюдателя касается:
+    // Клавиша без пары в таблице GLFW до эмулятора не доходит, а наблюдателя касается:
     // по ней всё равно видно, что игрок что-то делает (продление тишины автосохранения).
     seen.length = 0;
     window.dispatchEvent(key('keydown', { code: 'Lang1', key: 'Lang1' }));

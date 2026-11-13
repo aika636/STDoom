@@ -1,11 +1,11 @@
-// Тесты распознавания IWAD (Фаза 6, §1.2, §5.3).
+// Тесты распознавания IWAD.
 //
 // Чистый node, без jsdom. Настоящих коммерческих WAD в репозитории нет и не будет
-// (§1.2), поэтому все образцы здесь синтетические: заголовок + директория лампов,
+//, поэтому все образцы здесь синтетические: заголовок + директория лампов,
 // собранные руками. Этого достаточно — распознавание смотрит ровно на них.
 //
 // Главное, что здесь проверяется, — ИМЯ ФАЙЛА В DOS. Флага `-iwad` в ванили нет
-// (§5.3), движок ищет doom2.wad → doom.wad → doom1.wad, и ошибка в имени означает
+//, движок ищет doom2.wad → doom.wad → doom1.wad, и ошибка в имени означает
 // «игра не увидела WAD игрока» без единого сообщения.
 //
 // Запуск: node tests/dos/iwad.test.mjs
@@ -57,7 +57,7 @@ const episodeLumps = (episodes) => episodes.flatMap(
 
 // --- Определение имени файла ---------------------------------------------------
 
-test('§5.3: MAP01… → DOOM2.WAD', () => {
+test('MAP01… → DOOM2.WAD', () => {
     const wad = makeWad('IWAD', ['PLAYPAL', 'MAP01', 'THINGS', 'MAP02', 'MAP32']);
     const info = inspectIwad(wad, 'doom2.wad');
     assert(info.ok, `распознан: ${info.error ?? ''}`);
@@ -65,7 +65,7 @@ test('§5.3: MAP01… → DOOM2.WAD', () => {
     assertEqual(info.dosName, 'DOOM2.WAD', 'имя файла в DOS');
 });
 
-test('§5.3: четыре эпизода → Ultimate Doom, имя DOOM.WAD', () => {
+test('четыре эпизода → Ultimate Doom, имя DOOM.WAD', () => {
     const info = inspectIwad(makeWad('IWAD', ['PLAYPAL', ...episodeLumps([1, 2, 3, 4])]));
     assert(info.ok, 'распознан');
     assertEqual(info.kind, 'ultimate', 'тип');
@@ -73,14 +73,14 @@ test('§5.3: четыре эпизода → Ultimate Doom, имя DOOM.WAD', ()
     assertEqual(info.episodes.join(','), '1,2,3,4', 'эпизоды');
 });
 
-test('§5.3: три эпизода → registered, имя тоже DOOM.WAD', () => {
+test('три эпизода → registered, имя тоже DOOM.WAD', () => {
     const info = inspectIwad(makeWad('IWAD', [...episodeLumps([1, 2, 3])]));
     assert(info.ok, 'распознан');
     assertEqual(info.kind, 'registered', 'тип');
     assertEqual(info.dosName, 'DOOM.WAD', 'имя файла в DOS');
 });
 
-test('§5.3: только первый эпизод → shareware, имя DOOM1.WAD', () => {
+test('только первый эпизод → shareware, имя DOOM1.WAD', () => {
     const info = inspectIwad(makeWad('IWAD', ['PLAYPAL', ...episodeLumps([1])]));
     assert(info.ok, 'распознан');
     assertEqual(info.kind, 'shareware', 'тип');
@@ -206,7 +206,7 @@ test('DOOM.EXE опознаётся по сигнатуре MZ, shareware — п
     const info = inspectExe(new Uint8Array(readFileSync(path)));
 
     assert(info.ok, `штатный DOOM.EXE принят: ${info.error ?? ''}`);
-    assertEqual(info.md5, 'e2382b7dc47ae2433d26b6e6bc312999', 'MD5 из §1.2 плана');
+    assertEqual(info.md5, 'e2382b7dc47ae2433d26b6e6bc312999', 'MD5 из ');
     assertEqual(info.known, true, 'он есть в таблице');
     assert(/shareware/i.test(info.versionName), `подпись версии: ${info.versionName}`);
 });

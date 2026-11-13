@@ -1,4 +1,4 @@
-// Тач-управление: привязка пальцев к CommandInterface (план §6).
+// Тач-управление: привязка пальцев к CommandInterface.
 //
 // Вся математика — в `touch-layout.js` (там нет DOM), здесь только события и
 // отправка в эмулятор. Рисование — в `shell/touch-overlay.js` (оверлей лежит поверх
@@ -12,14 +12,14 @@
 //    Иначе `mouse.js` увидит их как обычный pointerdown и запросит Pointer Lock,
 //    которого на планшете не бывает, — игрок получит предупреждение в консоли
 //    вместо выстрела.
-// 3. Огонь считается ПО ПАЛЬЦАМ (refcount). Кнопки огня две (§6.1), и отпускание
+// 3. Огонь считается ПО ПАЛЬЦАМ (refcount). Кнопки огня две, и отпускание
 //    одной не должно гасить очередь, пока держат вторую.
-// 4. Второй аргумент `sendMouseRelativeMotion` ВСЕГДА 0 (§4.8): вертикаль мыши в
+// 4. Второй аргумент `sendMouseRelativeMotion` ВСЕГДА 0: вертикаль мыши в
 //    DOOM двигает вперёд/назад, свободного взгляда нет. Свайп по Y выбрасывается.
 // 5. Кнопка Use шлёт КЛАВИШУ Space, а двойной тап по look-зоне — двойной клик
 //    мышиной кнопки forward. Это не разнобой: в `DEFAULT.CFG` `key_use 57` — это
 //    Space, и кнопке незачем ходить кругом; а вот жест «двойной тап» иначе не
-//    выразить — двойной клик forward/strafe в ванили и есть Use (§6.3), и работает
+//    выразить — двойной клик forward/strafe в ванили и есть Use, и работает
 //    он без единой правки конфига.
 // 6. Сброс всего нажатого на pointercancel/blur/visibilitychange/detach обязателен.
 //    Залипший палец здесь так же смертелен, как залипшая клавиша в keyboard.js:
@@ -39,7 +39,7 @@ import {
 const BUTTON_FIRE = 0;
 const BUTTON_FORWARD = 2;
 
-/** Клавиша Use из §5.2 (`key_use 57` — это Space). */
+/** Клавиша Use (docs/bundle.md; `key_use 57` — это Space). */
 const USE_CODE = 'Space';
 
 /** Максимальная пауза между тапами, при которой это ещё двойной тап, мс. */
@@ -81,7 +81,7 @@ export function createTouch({
 
     /** Активные пальцы: pointerId → что он держит. */
     const pointers = new Map();
-    /** Пальцы, держащие огонь: кнопок огня две, гасим по последнему (§6.1). */
+    /** Пальцы, держащие огонь: кнопок огня две, гасим по последнему. */
     const firing = new Set();
 
     // Трекеры поворота и стика — по одному на модуль, и владеть ими может только
@@ -91,7 +91,7 @@ export function createTouch({
     // хуже: `begin()` второго пальца отпускал WASD и переносил origin, а его
     // `pointerup` звал `end()` — первый палец оставался лежать на экране, но его
     // движения уже не давали ничего вовсе, пока его не поднимут и не поставят
-    // заново. Зоны эти большие (половина сцены каждая, §6.2), так что второй палец
+    // заново. Зоны эти большие (половина сцены каждая), так что второй палец
     // там — не экзотика, а ладонь и обычный тап по Use-жесту.
     //
     // Поэтому владение явное: трекер ведёт первый палец, остальные копятся молча, а
@@ -128,7 +128,7 @@ export function createTouch({
 
     function sendTurn(delta) {
         if (!delta) return;
-        // Второй аргумент — всегда 0. Это браузерный novert (§4.8), а не заглушка.
+        // Второй аргумент — всегда 0. Это браузерный novert, а не заглушка.
         try { ci.sendMouseRelativeMotion(delta, 0); } catch (err) { logWarn('sendMouseRelativeMotion (тач)', err); }
     }
 
@@ -172,7 +172,7 @@ export function createTouch({
     }
 
     /**
-     * Синтетический двойной клик кнопки forward = Use (§6.3). Оба клика шлём здесь,
+     * Синтетический двойной клик кнопки forward = Use. Оба клика шлём здесь,
      * на ВТОРОМ тапе: одиночный тап по look-зоне не должен дёргать игрока вперёд.
      */
     function sendUseDoubleClick() {
@@ -298,7 +298,7 @@ export function createTouch({
      *
      * @param {number} pointerId
      * @param {{x: number, y: number}|null} p точка отпускания; null — если её нет
-     * @param {boolean} tap считать ли это тапом (двойной тап = Use, §6.3)
+     * @param {boolean} tap считать ли это тапом (двойной тап = Use)
      */
     function releasePointer(pointerId, p, tap) {
         const record = pointers.get(pointerId);
@@ -365,7 +365,7 @@ export function createTouch({
 
     /**
      * Отпускает всё: кнопки, клавиши, стик, накопленную дробь поворота.
-     * Единственная защита от залипания при системном жесте (§6, п.6 шапки).
+     * Единственная защита от залипания при системном жесте.
      */
     function releaseAll() {
         pointers.clear();
@@ -413,7 +413,7 @@ export function createTouch({
     function attach() {
         if (attached) return;
         attached = true;
-        // Фаза перехвата: до канваса, где сидит мышь.
+        // Фаза перехвата (capture): до канваса, где сидит мышь.
         surface.addEventListener('pointerdown', onPointerDown, true);
         window.addEventListener('pointermove', onPointerMove, true);
         window.addEventListener('pointerup', onPointerUp, true);

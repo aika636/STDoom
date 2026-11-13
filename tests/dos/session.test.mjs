@@ -1,4 +1,4 @@
-// Тесты склейки окна и эмулятора (§4.5, §4.7, §4.10). Проверяется порядок событий:
+// Тесты склейки окна и эмулятора. Проверяется порядок событий:
 // автостарта нет, неудачный старт возвращает оверлей «Играть», teardown снимает ввод
 // и гасит сессию — в том числе осиротевшую, если окно закрыли во время загрузки wasm.
 //
@@ -100,10 +100,10 @@ function makeRefs() {
     document.body.append(stage, sound);
     const statuses = [];
     const running = [];
-    // Экран отказа (§3.3): окно рисует его само, сюда приходят только текст и кнопки.
+    // Экран отказа: окно рисует его само, сюда приходят только текст и кнопки.
     const failure = { shown: false, last: null, hides: 0 };
     const closeRequests = [];
-    // Панель настроек живёт в окне и сообщает об изменениях сюда (Фаза 4): содержимое
+    // Панель настроек живёт в окне и сообщает об изменениях сюда: содержимое
     // применяет их к живой сессии само.
     const settingsListeners = new Set();
     return {
@@ -156,7 +156,7 @@ function setupScenario({ bundleOk = true, deferBoot = false, degraded = false } 
 async function settle(times = 12) {
     for (let i = 0; i < times; i++) await Promise.resolve();
     // Считать обороты микрозадач вручную стало ненадёжно: цепочка старта удлиняется
-    // (Фаза 6 добавила в неё чтение своих файлов из IndexedDB). Один оборот
+    // (добавила в неё чтение своих файлов из IndexedDB). Один оборот
     // макрозадач в конце спускает всё, что осталось, сколько бы await там ни было.
     await new Promise((resolve) => { setTimeout(resolve, 0); });
 }
@@ -169,7 +169,7 @@ function keyEvent() {
 
 // --- Автостарта нет -----------------------------------------------------------
 
-await test('§4.5: init() не запускает эмулятор — автостарта нет', async () => {
+await test('init() не запускает эмулятор — автостарта нет', async () => {
     const { log } = setupScenario();
     const refs = makeRefs();
     const session = createDoomSession();
@@ -184,13 +184,13 @@ await test('§4.5: init() не запускает эмулятор — авто�
     const canvas = refs.screen.querySelector('canvas');
     assertEqual(canvas.width, 320, 'нативная ширина VGA');
     assertEqual(canvas.height, 200, 'нативная высота VGA');
-    assertEqual(canvas.tabIndex, 0, 'без tabindex фокуса не будет, а от него зависит §4.7');
+    assertEqual(canvas.tabIndex, 0, 'без tabindex фокуса не будет, а от него зависит ');
 
     teardown();
     refs.cleanup();
 });
 
-await test('§4.5: эмулятор стартует только после onStart (жест игрока нужен звуку)', async () => {
+await test('эмулятор стартует только после onStart (жест игрока нужен звуку)', async () => {
     const { log } = setupScenario();
     const refs = makeRefs();
     const session = createDoomSession();
@@ -209,7 +209,7 @@ await test('§4.5: эмулятор стартует только после onS
     refs.cleanup();
 });
 
-await test('§4.7: после успешного старта ввод подключён к игровому полю', async () => {
+await test('после успешного старта ввод подключён к игровому полю', async () => {
     setupScenario();
     const refs = makeRefs();
     const session = createDoomSession();
@@ -225,7 +225,7 @@ await test('§4.7: после успешного старта ввод подк�
 
     const menu = new dom.window.Event('contextmenu', { bubbles: true, cancelable: true });
     canvas.dispatchEvent(menu);
-    assert(menu.defaultPrevented, 'правая кнопка не открывает меню браузера (§4.8)');
+    assert(menu.defaultPrevented, 'правая кнопка не открывает меню браузера');
 
     teardown();
     await settle();
@@ -316,7 +316,7 @@ await test('teardown снимает ввод и останавливает се�
     teardown();
     await settle();
 
-    assert(log.includes('persist'), 'прогресс сохранён (§4.10)');
+    assert(log.includes('persist'), 'прогресс сохранён');
     assert(log.includes('exit'), 'эмулятор погашен');
 
     const event = keyEvent();
@@ -374,7 +374,7 @@ await test('teardown снимает подписки окна: resize и visibil
 
 // --- Уход со вкладки ----------------------------------------------------------
 
-await test('§4.10: уход со вкладки ставит паузу и сохраняет прогресс', async () => {
+await test('уход со вкладки ставит паузу и сохраняет прогресс', async () => {
     const { log } = setupScenario();
     const refs = makeRefs();
     const session = createDoomSession();
@@ -401,7 +401,7 @@ await test('§4.10: уход со вкладки ставит паузу и со
 
 // --- Звук ---------------------------------------------------------------------
 
-await test('§4.5: кнопка звука применяет настройку к живой сессии', async () => {
+await test('кнопка звука применяет настройку к живой сессии', async () => {
     const { log } = setupScenario();
     const refs = makeRefs();
     const session = createDoomSession();
@@ -425,7 +425,7 @@ await test('§4.5: кнопка звука применяет настройку
     refs.cleanup();
 });
 
-await test('§4.5: настройка «звук выключен» глушит эмулятор сразу при старте', async () => {
+await test('настройка «звук выключен» глушит эмулятор сразу при старте', async () => {
     const { log } = setupScenario();
     context.extensionSettings.STDoom = { sound: false };
     const refs = makeRefs();
@@ -459,13 +459,13 @@ await test('выход из DOOM через меню сообщается игр
     refs.cleanup();
 });
 
-// --- Настройки на лету (Фаза 4) -----------------------------------------------
+// --- Настройки на лету -----------------------------------------------
 //
 // Смысл панели настроек в том, что её изменения применяются к УЖЕ ЗАПУЩЕННОЙ игре:
 // перезапуск DOOM стоил бы игроку партии. Проверяем, что сигнал из окна доезжает
 // до нужного рычага рантайма.
 
-await test('§4.9: изменение циклов уходит в эмулятор без перезапуска', async () => {
+await test('изменение циклов уходит в эмулятор без перезапуска', async () => {
     const { log } = setupScenario();
     const refs = makeRefs();
     const session = createDoomSession();
@@ -483,7 +483,7 @@ await test('§4.9: изменение циклов уходит в эмулят�
     refs.cleanup();
 });
 
-await test('§4.5: изменение звука в панели глушит и возвращает звук на лету', async () => {
+await test('изменение звука в панели глушит и возвращает звук на лету', async () => {
     const { log } = setupScenario();
     const refs = makeRefs();
     const session = createDoomSession();
@@ -505,7 +505,7 @@ await test('§4.5: изменение звука в панели глушит и
     refs.cleanup();
 });
 
-await test('§4.9: отладочный оверлей появляется поверх сцены и убирается', async () => {
+await test('отладочный оверлей появляется поверх сцены и убирается', async () => {
     setupScenario();
     const refs = makeRefs();
     const session = createDoomSession();
@@ -533,13 +533,13 @@ await test('§4.9: отладочный оверлей появляется по
     refs.cleanup();
 });
 
-// --- Тач-контролы (Фаза 5) ----------------------------------------------------
+// --- Тач-контролы ----------------------------------------------------
 //
 // Под jsdom сенсора нет (navigator.maxTouchPoints = 0), поэтому авто-режим здесь
 // тач не включает — это и проверяем заодно: на десктопе кнопки поверх картинки
 // были бы чистой помехой.
 
-await test('§6: на устройстве без сенсора авто-режим тач не включает', async () => {
+await test('на устройстве без сенсора авто-режим тач не включает', async () => {
     setupScenario();
     const refs = makeRefs();
     const session = createDoomSession();
@@ -553,7 +553,7 @@ await test('§6: на устройстве без сенсора авто-реж
     refs.cleanup();
 });
 
-await test('§6: режим «всегда включены» кладёт тач-оверлей поверх сцены', async () => {
+await test('режим «всегда включены» кладёт тач-оверлей поверх сцены', async () => {
     setupScenario();
     const refs = makeRefs();
     const session = createDoomSession();
@@ -580,7 +580,7 @@ await test('§6: режим «всегда включены» кладёт та�
     refs.cleanup();
 });
 
-await test('§6: teardown уносит тач-оверлей вместе с окном', async () => {
+await test('teardown уносит тач-оверлей вместе с окном', async () => {
     setupScenario();
     const refs = makeRefs();
     const session = createDoomSession();
@@ -618,7 +618,7 @@ await test('teardown отписывается от настроек: закры�
     refs.cleanup();
 });
 
-// --- Экран отказа при повторяющихся ошибках кадра (§3.3) ----------------------
+// --- Экран отказа при повторяющихся ошибках кадра ----------------------
 //
 // Кадр «ломается» самым дешёвым способом: он длиннее ожидаемого, а его subarray()
 // бросает — draw() падает ровно там, где в жизни падает потерянный контекст WebGL.
@@ -651,7 +651,7 @@ async function withManualRaf(body) {
     }
 }
 
-await test('§3.3: отказ отрисовки ставит паузу, сохраняет прогресс и объясняет игроку', async () => {
+await test('отказ отрисовки ставит паузу, сохраняет прогресс и объясняет игроку', async () => {
     await withManualRaf(async (queue) => {
         const { log, ci } = setupScenario();
         const refs = makeRefs();
@@ -691,7 +691,7 @@ await test('§3.3: отказ отрисовки ставит паузу, сох
     });
 });
 
-await test('§3.3: «Продолжить» убирает экран и снимает паузу', async () => {
+await test('«Продолжить» убирает экран и снимает паузу', async () => {
     await withManualRaf(async (queue) => {
         const { log, ci } = setupScenario();
         const refs = makeRefs();
@@ -725,7 +725,7 @@ await test('§3.3: «Продолжить» убирает экран и сни�
     });
 });
 
-await test('§3.3: «Закрыть» просит окно закрыться', async () => {
+await test('«Закрыть» просит окно закрыться', async () => {
     await withManualRaf(async (queue) => {
         const { ci } = setupScenario();
         const refs = makeRefs();
@@ -784,7 +784,7 @@ await test('падение проводки ввода не запирает к�
     refs.cleanup();
 });
 
-await test('§3.3: экран отказа снимает ввод — иначе до его кнопок не добраться', async () => {
+await test('экран отказа снимает ввод — иначе до его кнопок не добраться', async () => {
     await withManualRaf(async (queue) => {
         const { log, ci } = setupScenario();
         const refs = makeRefs();
@@ -803,7 +803,7 @@ await test('§3.3: экран отказа снимает ввод — инач�
         assert(log.includes('mouse-button'), 'до отказа ввод работает');
 
         // Экран отказа лежит ВНУТРИ сцены, а ввод перехватывает события раньше, чем
-        // они дойдут до его кнопок: тач глушит касание на самой сцене (правило 18),
+        // они дойдут до его кнопок: тач глушит касание на самой сцене,
         // а при активном Pointer Lock курсора на экране нет вовсе. Пауза сама по себе
         // ввод не снимает — isActive() смотрит только на disposed.
         pumpBrokenFrames(ci, queue, 30);
@@ -827,7 +827,7 @@ await test('§3.3: экран отказа снимает ввод — инач�
     });
 });
 
-await test('§3.3: после закрытия окна экран отказа убран и больше не показывается', async () => {
+await test('после закрытия окна экран отказа убран и больше не показывается', async () => {
     await withManualRaf(async (queue) => {
         const { ci, log } = setupScenario();
         const refs = makeRefs();
@@ -857,13 +857,13 @@ await test('§3.3: после закрытия окна экран отказа 
     });
 });
 
-// --- Геймпад (Фаза 6) ---------------------------------------------------------
+// --- Геймпад ---------------------------------------------------------
 //
 // Здесь проверяется только ПРОВОДКА: что сессия подключает опрос и снимает его при
 // закрытии окна. Сама математика и слой опроса покрыты в tests/input/gamepad*.
 // Кадр rAF на время теста делаем ручным — иначе цикл опроса не сдвинется с места.
 
-await test('§7: сессия подключает опрос геймпада, teardown его снимает', async () => {
+await test('сессия подключает опрос геймпада, teardown его снимает', async () => {
     const { log } = setupScenario();
 
     const frames = [];
@@ -872,7 +872,7 @@ await test('§7: сессия подключает опрос геймпада, 
     globalThis.requestAnimationFrame = (fn) => frames.push(fn);
     globalThis.cancelAnimationFrame = () => {};
 
-    // Правый стик отклонён вправо: единственная ось, которая доезжает до игры (§7).
+    // Правый стик отклонён вправо: единственная ось, которая доезжает до игры.
     const pad = { index: 0, connected: true, mapping: 'standard', axes: [0, 0, 1, 0], buttons: [] };
     // gamepad.js обращается к голому navigator, то есть к глобальному объекту node,
     // а не к navigator из jsdom: getGamepads вешаем именно туда.
@@ -917,9 +917,9 @@ function pumpFrames(frames, count) {
     }
 }
 
-// --- Сохранение по факту сохранения в игре (§4.10) ----------------------------
+// --- Сохранение по факту сохранения в игре ----------------------------
 
-await test('§4.10: F2 доводит прогресс до хранилища, не дожидаясь закрытия окна', async () => {
+await test('F2 доводит прогресс до хранилища, не дожидаясь закрытия окна', async () => {
     const { log, ci } = setupScenario();
     const refs = makeRefs();
     const session = createDoomSession();
@@ -930,7 +930,7 @@ await test('§4.10: F2 доводит прогресс до хранилища, 
     const canvas = refs.screen.querySelector('canvas');
     canvas.focus();
 
-    // Обычная игра ничего не сохраняет: persist() не бесплатен (§4.10).
+    // Обычная игра ничего не сохраняет: persist() не бесплатен.
     window.dispatchEvent(keyEvent());
     await settle();
     assertEqual(log.filter((l) => l === 'persist').length, 0, 'по игровым клавишам не сохраняем');

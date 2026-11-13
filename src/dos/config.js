@@ -1,4 +1,4 @@
-// Генераторы текстовых конфигов бандла: `dosbox.conf` (§5.1) и `DEFAULT.CFG` (§5.2).
+// Генераторы текстовых конфигов бандла: `dosbox.conf` и `DEFAULT.CFG`.
 //
 // Зачем генератор, а не два файла в assets: значения должны жить в коде, чтобы их
 // можно было покрыть тестом и переопределить из настроек расширения (циклы,
@@ -32,9 +32,9 @@ export const sbPortDecimal = () => SOUND_BLASTER.port;
 
 // --- Пределы, нарушение которых ломает игру ----------------------------------
 
-// `mouse_sensitivity` ≥ 31 роняет DOOM при заходе в Options (§5.2).
+// `mouse_sensitivity` ≥ 31 роняет DOOM при заходе в Options.
 export const MOUSE_SENSITIVITY_MAX = 30;
-// memsize > 64 ломает DOS/4GW 1.95 внутри DOOM.EXE (§5.1). Поднимать нельзя.
+// memsize > 64 ломает DOS/4GW 1.95 внутри DOOM.EXE. Поднимать нельзя.
 export const MEMSIZE_MAX = 64;
 
 // --- Скан-коды IBM PC set-1 ---------------------------------------------------
@@ -90,7 +90,7 @@ export const SCAN = Object.freeze({
 
 /** Значения, которые разрешено переопределять снаружи. */
 export const DOSBOX_DEFAULTS = Object.freeze({
-    cycles: 20000,   // рычаг производительности №1 (§4.9)
+    cycles: 20000,   // рычаг производительности №1
     frameskip: 0,    // рычаг производительности №2, аварийный
     memsize: 16,     // выше 64 нельзя, см. MEMSIZE_MAX
 });
@@ -105,7 +105,7 @@ export const CYCLES_MAX = 1000000;
  * зовётся оттуда: функция чистая и зависит только от границ выше, а панель настроек
  * (`shell/settings-panel.js`) — второй её потребитель. Пока она лежала в рантайме,
  * окно ради одного этого хелпера тянуло в свой граф импортов весь слой эмулятора —
- * загрузчик, рендер, звук, хранилище, — и §3.2 («окно про эмулятор не знает») был
+ * загрузчик, рендер, звук, хранилище, — и принцип «окно про эмулятор не знает» был
  * верен только по поведению, но не по коду.
  *
  * @param {unknown} value
@@ -132,7 +132,7 @@ function clampInt(value, min, max, fallback, warn, what) {
 }
 
 /**
- * Сборка `dosbox.conf` (§5.1).
+ * Сборка `dosbox.conf`.
  * @param {object} [overrides] `cycles`, `frameskip`, `memsize`
  * @param {(msg: string) => void} [warn] куда сообщать о зажатых значениях
  * @returns {string} валидный ini
@@ -167,7 +167,7 @@ export function buildDosboxConf(overrides = {}, warn) {
         'scaler    = none',
         '',
         '[cpu]',
-        'core    = normal',            // dynamic в js-dos недоступен (§4.9)
+        'core    = normal',            // dynamic в js-dos недоступен
         'cputype = auto',
         `cycles  = ${cycles}`,
         '',
@@ -191,7 +191,7 @@ export function buildDosboxConf(overrides = {}, warn) {
         'oplrate = 49716',
         '',
         '[joystick]',
-        'joysticktype = none',         // геймпад разбираем сами (§7)
+        'joysticktype = none',         // геймпад разбираем сами
         '',
         '[dos]',
         'xms = true',
@@ -219,11 +219,11 @@ export const DOOM_CFG_DEFAULTS = Object.freeze({
 });
 
 /**
- * Сборка `DEFAULT.CFG` (§5.2).
+ * Сборка `DEFAULT.CFG`.
  *
  * Формат парсится движком как `sscanf(line, "%79s %[^\n]")`, то есть комментарии
  * в файле НЕ поддерживаются: «; …» после значения уехало бы прямо в значение.
- * Поэтому пояснения из плана остаются здесь, в коде, а в вывод не идут.
+ * Поэтому пояснения остаются здесь, в коде, а в вывод не идут.
  *
  * @param {object} [overrides] `mouse_sensitivity`, `sfx_volume`, `music_volume`,
  *   `screenblocks`, `detaillevel`

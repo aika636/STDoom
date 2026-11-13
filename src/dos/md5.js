@@ -1,4 +1,4 @@
-// MD5 над Uint8Array (Фаза 6, «свой IWAD с проверкой MD5»).
+// MD5 над Uint8Array («свой IWAD с проверкой MD5»).
 //
 // Почему своя реализация, а не SubtleCrypto: `crypto.subtle.digest` умеет только
 // SHA-1/SHA-256/SHA-384/SHA-512 — MD5 из веб-крипто выкинут намеренно, как

@@ -1,4 +1,4 @@
-// Тесты каркаса (Фаза 1) под jsdom: кнопка в wand-меню, слэш-команда, гвард одной
+// Тесты каркаса под jsdom: кнопка в wand-меню, слэш-команда, гвард одной
 // сессии, опции попапа (в первую очередь allowEscapeClose: false) и жизненный цикл
 // содержимого окна.
 //
@@ -123,12 +123,12 @@ await test('попап открывается с allowEscapeClose: false', async
         assertEqual(popupCalls.length, 1, 'показов попапа');
         const { type, options } = popupCalls[0];
         assertEqual(type, context.POPUP_TYPE.DISPLAY, 'тип попапа — DISPLAY');
-        // Esc принадлежит DOOM (§4.7 плана). Если этот тест покраснел — правило сломали.
+        // Esc принадлежит DOOM. Если этот тест покраснел — правило сломали.
         assertEqual(options.allowEscapeClose, false, 'allowEscapeClose');
         assertEqual(options.wider, true, 'wider');
         // large даёт попапу высоту 90% экрана. Без него wider тянул только ширину,
         // высота оставалась по содержимому, и игровое поле выходило крошечным —
-        // при том что DOOM растягивается как угодно (правило 17).
+        // при том что DOOM растягивается как угодно.
         assertEqual(options.large, true, 'large — иначе окно съёживается по содержимому');
     });
 });
@@ -202,7 +202,7 @@ await test('окно собирает рамку, поле и кнопки', asy
     });
 });
 
-// --- Экран отказа (§3.3)
+// --- Экран отказа
 
 await test('экран отказа есть в разметке и по умолчанию скрыт', async () => {
     await session({}, (root) => {

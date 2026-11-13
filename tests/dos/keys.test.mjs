@@ -1,4 +1,4 @@
-// Тесты таблицы GLFW-кодов (§4.6). Чистое ядро, без DOM.
+// Тесты таблицы GLFW-кодов. Чистое ядро, без DOM.
 // Учёт удерживаемых клавиш живёт в src/input/keyboard.js и проверяется своим тестом.
 // Запуск: node tests/dos/keys.test.mjs
 
@@ -10,7 +10,7 @@ import { assert, assertEqual, report, test } from '../_harness.mjs';
 
 console.log('dos keys');
 
-test('коды из таблицы §4.6 плана совпадают со спецификацией GLFW3', () => {
+test('коды из таблицы в docs/input.md совпадают со спецификацией GLFW3', () => {
     const expected = {
         ArrowUp: 265, ArrowDown: 264, ArrowLeft: 263, ArrowRight: 262,
         ControlLeft: 341, AltLeft: 342, ShiftLeft: 340,

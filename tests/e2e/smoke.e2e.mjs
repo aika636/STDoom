@@ -1,8 +1,8 @@
 // Набор e2e «дым»: расширение в живой SillyTavern.
 //
-// Ради этого набора вообще писалась обвязка e2e — он закрывает главный риск §10 плана:
+// Ради этого набора вообще писалась обвязка e2e — он закрывает главный риск проекта:
 // CSP таверны. Всё, что делает загрузчик js-dos (вставка <script>, eval внутри бандла,
-// Worker из blob:, wasm), в jsdom не проверяется никак, а на голом стенде Фазы 0 CSP
+// Worker из blob:, wasm), в jsdom не проверяется никак, а на голом стенде CSP
 // нет вовсе. Проверить это можно только здесь.
 
 import { strict as assert } from 'node:assert';
@@ -161,7 +161,7 @@ export default async function suite(env) {
     await e2eTest(env, 'закрытие запущенной игры спрашивает подтверждение', async () => {
         await releasePointerLock(page);
         await page.click('.stdoom-close');
-        // На запущенной игре modal.js показывает CONFIRM таверны (§4.7).
+        // На запущенной игре modal.js показывает CONFIRM таверны.
         const confirm = page.locator('dialog.popup[open]').last();
         await confirm.waitFor({ state: 'visible', timeout: 10_000 });
         await confirm.getByRole('button', { name: 'Выйти' }).click();
@@ -174,7 +174,7 @@ export default async function suite(env) {
     });
 
     await e2eTest(env, 'settings.json остаётся маленьким: сейвам там не место', async () => {
-        // §4.10: settings.json таверна читает и пишет целиком при каждом сохранении,
+        // settings.json таверна читает и пишет целиком при каждом сохранении,
         // поэтому в extensionSettings живут только настройки. Сам факт сохранения
         // прогресса проверяет отдельный набор saves.e2e.mjs — здесь важно обратное:
         // что в настройках НЕ появилось ничего тяжёлого.

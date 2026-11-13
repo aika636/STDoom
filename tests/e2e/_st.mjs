@@ -229,7 +229,7 @@ export async function openDoom(page) {
     await page.waitForSelector('.stdoom-root .stdoom-frame');
 }
 
-// Esc окно НЕ закрывает (§4.7 плана: клавиша принадлежит DOOM) — только своя кнопка
+// Esc окно НЕ закрывает (клавиша принадлежит DOOM) — только своя кнопка
 // в рамке. Если однажды этот хелпер начнёт жать Escape, значит правило сломали.
 export async function closeDoom(page) {
     await page.click('.stdoom-close');

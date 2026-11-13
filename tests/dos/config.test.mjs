@@ -1,7 +1,7 @@
-// Тесты генераторов dosbox.conf (§5.1) и DEFAULT.CFG (§5.2). Без DOM и wasm.
+// Тесты генераторов dosbox.conf и DEFAULT.CFG. Без DOM и wasm.
 // Запуск: node tests/dos/config.test.mjs
 //
-// Отдельная группа в конце файла — тесты-стражи против открытого риска §10
+// Отдельная группа в конце файла — тесты-стражи против расхождения конфигов
 // «Расхождение эталонного dosbox.conf и генератора». Эталоны в `assets/doom/` и
 // генераторы в `src/dos/config.js` описывают одно и то же, но живут порознь и в
 // рантайм идут РАЗНЫМИ путями:
@@ -54,7 +54,7 @@ function assertSameMap(actual, expected, whatActual, whatExpected) {
 
 console.log('dos config');
 
-test('dosbox.conf: ключевые поля из §5.1', () => {
+test('dosbox.conf: ключевые поля', () => {
     const ini = parseIni(buildDosboxConf());
     const expected = {
         'sdl.autolock': 'false',
@@ -94,7 +94,7 @@ test('dosbox.conf: autoexec монтирует диск и запускает DO
     assert(tail.includes('\nc:\n'), 'переход на диск C');
     assert(tail.includes('DOOM.EXE'), 'запуск игры');
     // core=dynamic в js-dos-форке недоступен — попасть в конфиг он не должен.
-    assert(!text.includes('dynamic'), 'никакого core=dynamic (§4.9)');
+    assert(!text.includes('dynamic'), 'никакого core=dynamic');
 });
 
 test('dosbox.conf: переопределение рычагов производительности', () => {
@@ -219,7 +219,7 @@ test('DEFAULT.CFG: остальные переопределения', () => {
 });
 
 test('параметры Sound Blaster в двух конфигах обязаны совпадать', () => {
-    // Рассинхрон даёт тишину без единого сообщения об ошибке (§5.1) — поэтому
+    // Рассинхрон даёт тишину без единого сообщения об ошибке — поэтому
     // источник правды один, а тест страхует от «оптимизации» руками.
     const ini = parseIni(buildDosboxConf());
     const cfg = parseDoomCfg(buildDefaultCfg());
@@ -247,7 +247,7 @@ test('генераторы детерминированы и не портят d
     assertEqual(parseDoomCfg(buildDefaultCfg()).mouse_sensitivity, '5', 'defaults не мутировали');
 });
 
-// --- Стражи «эталон vs генератор» (§10) ---------------------------------------
+// --- Стражи «эталон vs генератор» ---------------------------------------
 
 /** Команды из [autoexec]: parseIni их не видит — там не пары «ключ = значение». */
 function autoexecCommands(text) {
@@ -266,7 +266,7 @@ function autoexecCommands(text) {
     return out;
 }
 
-test('эталон assets/doom/dosbox.conf не разошёлся с buildDosboxConf() (§10, §5.1)', () => {
+test('эталон assets/doom/dosbox.conf не разошёлся с buildDosboxConf()', () => {
     // Эталон никто не читает в рантайме — конфиг строит генератор. Значит эталон
     // обязан быть его точным слепком, иначе он тихо превращается во вредную
     // документацию.
@@ -285,7 +285,7 @@ test('эталон assets/doom/dosbox.conf не разошёлся с buildDosbo
     }
 });
 
-test('эталон assets/doom/DEFAULT.CFG не разошёлся с buildDefaultCfg() (§10, §5.2)', () => {
+test('эталон assets/doom/DEFAULT.CFG не разошёлся с buildDefaultCfg()', () => {
     // ВНИМАНИЕ: в игру едет именно этот файл (tools/build-bundle.mjs), генератор вне
     // тестов не зовут. Если тест упал — сначала проверь, не отстал ли КОД.
     // Файл лежит с CRLF — parseDoomCfg режет по '\n', поэтому '\r' снимаем сами.

@@ -33,7 +33,7 @@ export function isOpen() {
  *        Без него игровое поле остаётся пустым.
  * @param {(refs: object) => void} [options.onStart]
  *        Вызывается по нажатию «Играть», после того как оверлей старта убран, а сессия
- *        помечена запущенной. Автостарта нет намеренно (§4.5): звук в браузере требует
+ *        помечена запущенной. Автостарта нет намеренно: звук в браузере требует
  *        пользовательского жеста, и без явной кнопки игрок увидел бы немое кино.
  * @returns {Promise<void>} завершается, когда окно закрыто и teardown отработал.
  */
@@ -64,7 +64,7 @@ export async function openShell({ init = null, onStart = null } = {}) {
     };
 
     // Панель — секция внутри рамки, а не второй попап ST: попап поверх нашего
-    // перехватил бы клики и сломал бы игру (§10 плана).
+    // перехватил бы клики и сломал бы игру.
     const panel = createSettingsPanel({
         onChange: (key, value) => {
             // Звук панель и кнопка в рамке меняют одинаково, поэтому подпись кнопки
@@ -80,7 +80,7 @@ export async function openShell({ init = null, onStart = null } = {}) {
         frame: ui.frame,
         toolbar: ui.toolbar,
         stage: ui.stage,
-        // Сюда Фаза 2 вставит канвас: контейнер уже держит letterbox 4:3.
+        // Сюда встаёт канвас: контейнер уже держит letterbox 4:3.
         screen: ui.screen,
         startOverlay: ui.startOverlay,
         failureOverlay: ui.failureOverlay,
@@ -179,7 +179,7 @@ function runTeardown() {
 }
 
 // Закрытие с подтверждением: случайно потерять прогресс запущенной игры обидно
-// (§4.7 плана). Если подтверждения показать нечем — закрываем без него, лишь бы окно
+//. Если подтверждения показать нечем — закрываем без него, лишь бы окно
 // не оказалось незакрываемым.
 async function requestClose() {
     if (!session) return;
@@ -243,17 +243,17 @@ function buildUi(settings) {
     stage.className = 'stdoom-stage';
 
     // Игровое поле: letterbox 4:3 считает JS — `renderer.layout()` выставляет
-    // канвасу инлайновые размеры от размера сцены (правило 17). `aspect-ratio` в
+    // канвасу инлайновые размеры от размера сцены. `aspect-ratio` в
     // style.css — страховка на тот случай, когда канваса ещё нет. На vw не
     // полагаемся ни там, ни там: попап ST на узком экране даёт содержимому куда
-    // меньше, чем ширина окна (§4.4 плана).
+    // меньше, чем ширина окна.
     const screen = document.createElement('div');
     screen.className = 'stdoom-screen';
 
     const startOverlay = document.createElement('div');
     startOverlay.className = 'stdoom-start';
 
-    // Экран отказа (§3.3): пока он скрыт, его в разметке как бы нет — ни кликов, ни
+    // Экран отказа: пока он скрыт, его в разметке как бы нет — ни кликов, ни
     // фокуса он не отбирает, иначе мешал бы игре всё остальное время.
     const failureOverlay = document.createElement('div');
     failureOverlay.className = 'stdoom-failure';
@@ -419,14 +419,14 @@ async function showPopup(content) {
         // wider тянет ТОЛЬКО ширину (min-width 750px), а высоту попап оставляет по
         // содержимому — и окно выходило заметно меньше экрана, хотя DOOM растягивается
         // как угодно: он рисует 320x200, а до размера сцены картинку тянет CSS
-        // (правило 17). Высоту даёт large: 90% экрана. Без него игровое поле упиралось
+        //. Высоту даёт large: 90% экрана. Без него игровое поле упиралось
         // в высоту тулбара со строкой состояния и получалось «марочным».
         wider: true,
         large: true,
         // Скролл выключен: поле и так вписано в окно, а прокрутка под пальцем на
         // планшете уводила бы картинку во время игры.
         allowVerticalScrolling: false,
-        // ⚠ §4.7: Esc принадлежит DOOM, попапом он не закрывается.
+        // ⚠ Esc принадлежит DOOM, попапом он не закрывается.
         allowEscapeClose: false,
         animation: 'fast',
     };
@@ -473,7 +473,7 @@ function closeHostPopup(content) {
 
 // Свой оверлей на случай, когда попапа ST нет. Умеет ровно то, что нужно: закрытие
 // программное, из нашей кнопки. Ни Esc, ни клик мимо окна не закрывают — то и другое
-// стоило бы игроку партии (§4.7).
+// стоило бы игроку партии.
 function showFallbackOverlay(content) {
     const previousActive = document.activeElement;
     const overlay = document.createElement('div');

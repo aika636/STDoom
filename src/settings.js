@@ -4,7 +4,7 @@
 //
 // В settings.json живут ТОЛЬКО настройки. Сейвы DOOM (бинарь на десятки килобайт)
 // сюда не кладём: settings.json читается и пишется целиком при каждом
-// saveSettingsDebounced(). Для них будет IndexedDB — см. §4.10 плана.
+// saveSettingsDebounced(). Для них будет IndexedDB — см. docs/architecture.md.
 
 import { getCtx } from './ctx.js';
 
@@ -12,15 +12,15 @@ export const MODULE_NAME = 'STDoom';
 export const SETTINGS_VERSION = 1;
 
 // version      — номер схемы (задел под будущие миграции);
-// cycles       — циклы DOSBox, старт 20000 (§4.9 плана);
-// sound        — звук включён (mute/unmute, §4.5);
+// cycles       — циклы DOSBox, старт 20000;
+// sound        — звук включён (mute/unmute);
 // volume       — громкость 0…100 %. Регулятора у эмулятора нет вовсе, это наш
 //                собственный GainNode в графе js-dos (см. `dos/audio.js`);
 // mouseSensitivity — наш собственный множитель дельт мыши; крутим только его,
-//                множители в DEFAULT.CFG и dosbox.conf держим нейтральными (§4.8);
-// touchControls — тач-контролы: 'auto' (по наличию сенсора), 'on', 'off' (§6);
-// touchLayout  — оверрайды раскладки тач-контролов: сдвиги и масштабы (Фаза 5);
-// debugOverlay — оверлей с cpuMetrics из asyncifyStats() (§4.9), по умолчанию выключен.
+//                множители в DEFAULT.CFG и dosbox.conf держим нейтральными;
+// touchControls — тач-контролы: 'auto' (по наличию сенсора), 'on', 'off';
+// touchLayout  — оверрайды раскладки тач-контролов: сдвиги и масштабы;
+// debugOverlay — оверлей с cpuMetrics из asyncifyStats(), по умолчанию выключен.
 export const DEFAULTS = Object.freeze({
     version: SETTINGS_VERSION,
     cycles: 20000,
